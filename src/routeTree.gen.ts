@@ -24,7 +24,24 @@ import { Route as StudentRouteImport } from './routes/student'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as TestModulesRouteImport } from './routes/test-modules'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAiEvaluationsRouteImport } from './routes/admin.ai-evaluations'
+import { Route as AdminAuditLogsRouteImport } from './routes/admin.audit-logs'
+import { Route as AdminContentImportsRouteImport } from './routes/admin.content-imports'
+import { Route as AdminCouponsRouteImport } from './routes/admin.coupons'
+import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
+import { Route as AdminQuestionsRouteImport } from './routes/admin.questions'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminStudentsRouteImport } from './routes/admin.students'
+import { Route as AdminTestAttemptsRouteImport } from './routes/admin.test-attempts'
+import { Route as AdminTestTemplatesRouteImport } from './routes/admin.test-templates'
 import { Route as StudentIndexRouteImport } from './routes/student.index'
+import { Route as StudentAccountSettingsRouteImport } from './routes/student.account-settings'
+import { Route as StudentBrowseTestsRouteImport } from './routes/student.browse-tests'
+import { Route as StudentMyTestsRouteImport } from './routes/student.my-tests'
+import { Route as StudentProfileRouteImport } from './routes/student.profile'
+import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
+import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -101,9 +118,94 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAiEvaluationsRoute = AdminAiEvaluationsRouteImport.update({
+  id: '/ai-evaluations',
+  path: '/ai-evaluations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditLogsRoute = AdminAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentImportsRoute = AdminContentImportsRouteImport.update({
+  id: '/content-imports',
+  path: '/content-imports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCouponsRoute = AdminCouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlatformSettingsRoute = AdminPlatformSettingsRouteImport.update({
+  id: '/platform-settings',
+  path: '/platform-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStudentsRoute = AdminStudentsRouteImport.update({
+  id: '/students',
+  path: '/students',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTestAttemptsRoute = AdminTestAttemptsRouteImport.update({
+  id: '/test-attempts',
+  path: '/test-attempts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTestTemplatesRoute = AdminTestTemplatesRouteImport.update({
+  id: '/test-templates',
+  path: '/test-templates',
+  getParentRoute: () => AdminRoute,
+} as any)
 const StudentIndexRoute = StudentIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentAccountSettingsRoute = StudentAccountSettingsRouteImport.update({
+  id: '/account-settings',
+  path: '/account-settings',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentBrowseTestsRoute = StudentBrowseTestsRouteImport.update({
+  id: '/browse-tests',
+  path: '/browse-tests',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentMyTestsRoute = StudentMyTestsRouteImport.update({
+  id: '/my-tests',
+  path: '/my-tests',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentProfileRoute = StudentProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPurchasesRoute = StudentPurchasesRouteImport.update({
+  id: '/purchases',
+  path: '/purchases',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentTestHistoryRoute = StudentTestHistoryRouteImport.update({
+  id: '/test-history',
+  path: '/test-history',
   getParentRoute: () => StudentRoute,
 } as any)
 
@@ -122,6 +224,23 @@ export interface FileRoutesByFullPath {
   '/student': typeof StudentRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
+  '/admin/content-imports': typeof AdminContentImportsRoute
+  '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/platform-settings': typeof AdminPlatformSettingsRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/students': typeof AdminStudentsRoute
+  '/admin/test-attempts': typeof AdminTestAttemptsRoute
+  '/admin/test-templates': typeof AdminTestTemplatesRoute
+  '/student/account-settings': typeof StudentAccountSettingsRoute
+  '/student/browse-tests': typeof StudentBrowseTestsRoute
+  '/student/my-tests': typeof StudentMyTestsRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/purchases': typeof StudentPurchasesRoute
+  '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
 }
@@ -138,6 +257,23 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
+  '/admin/content-imports': typeof AdminContentImportsRoute
+  '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/platform-settings': typeof AdminPlatformSettingsRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/students': typeof AdminStudentsRoute
+  '/admin/test-attempts': typeof AdminTestAttemptsRoute
+  '/admin/test-templates': typeof AdminTestTemplatesRoute
+  '/student/account-settings': typeof StudentAccountSettingsRoute
+  '/student/browse-tests': typeof StudentBrowseTestsRoute
+  '/student/my-tests': typeof StudentMyTestsRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/purchases': typeof StudentPurchasesRoute
+  '/student/test-history': typeof StudentTestHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/student': typeof StudentIndexRoute
 }
@@ -157,6 +293,23 @@ export interface FileRoutesById {
   '/student': typeof StudentRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
+  '/admin/content-imports': typeof AdminContentImportsRoute
+  '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/platform-settings': typeof AdminPlatformSettingsRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/students': typeof AdminStudentsRoute
+  '/admin/test-attempts': typeof AdminTestAttemptsRoute
+  '/admin/test-templates': typeof AdminTestTemplatesRoute
+  '/student/account-settings': typeof StudentAccountSettingsRoute
+  '/student/browse-tests': typeof StudentBrowseTestsRoute
+  '/student/my-tests': typeof StudentMyTestsRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/purchases': typeof StudentPurchasesRoute
+  '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
 }
@@ -177,6 +330,23 @@ export interface FileRouteTypes {
     | '/student'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/admin/ai-evaluations'
+    | '/admin/audit-logs'
+    | '/admin/content-imports'
+    | '/admin/coupons'
+    | '/admin/payments'
+    | '/admin/platform-settings'
+    | '/admin/questions'
+    | '/admin/reports'
+    | '/admin/students'
+    | '/admin/test-attempts'
+    | '/admin/test-templates'
+    | '/student/account-settings'
+    | '/student/browse-tests'
+    | '/student/my-tests'
+    | '/student/profile'
+    | '/student/purchases'
+    | '/student/test-history'
     | '/admin/'
     | '/student/'
   fileRoutesByTo: FileRoutesByTo
@@ -193,6 +363,23 @@ export interface FileRouteTypes {
     | '/register'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/admin/ai-evaluations'
+    | '/admin/audit-logs'
+    | '/admin/content-imports'
+    | '/admin/coupons'
+    | '/admin/payments'
+    | '/admin/platform-settings'
+    | '/admin/questions'
+    | '/admin/reports'
+    | '/admin/students'
+    | '/admin/test-attempts'
+    | '/admin/test-templates'
+    | '/student/account-settings'
+    | '/student/browse-tests'
+    | '/student/my-tests'
+    | '/student/profile'
+    | '/student/purchases'
+    | '/student/test-history'
     | '/admin'
     | '/student'
   id:
@@ -211,6 +398,23 @@ export interface FileRouteTypes {
     | '/student'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/admin/ai-evaluations'
+    | '/admin/audit-logs'
+    | '/admin/content-imports'
+    | '/admin/coupons'
+    | '/admin/payments'
+    | '/admin/platform-settings'
+    | '/admin/questions'
+    | '/admin/reports'
+    | '/admin/students'
+    | '/admin/test-attempts'
+    | '/admin/test-templates'
+    | '/student/account-settings'
+    | '/student/browse-tests'
+    | '/student/my-tests'
+    | '/student/profile'
+    | '/student/purchases'
+    | '/student/test-history'
     | '/admin/'
     | '/student/'
   fileRoutesById: FileRoutesById
@@ -339,6 +543,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ai-evaluations': {
+      id: '/admin/ai-evaluations'
+      path: '/ai-evaluations'
+      fullPath: '/admin/ai-evaluations'
+      preLoaderRoute: typeof AdminAiEvaluationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit-logs': {
+      id: '/admin/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/admin/audit-logs'
+      preLoaderRoute: typeof AdminAuditLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content-imports': {
+      id: '/admin/content-imports'
+      path: '/content-imports'
+      fullPath: '/admin/content-imports'
+      preLoaderRoute: typeof AdminContentImportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/coupons': {
+      id: '/admin/coupons'
+      path: '/coupons'
+      fullPath: '/admin/coupons'
+      preLoaderRoute: typeof AdminCouponsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/platform-settings': {
+      id: '/admin/platform-settings'
+      path: '/platform-settings'
+      fullPath: '/admin/platform-settings'
+      preLoaderRoute: typeof AdminPlatformSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/questions': {
+      id: '/admin/questions'
+      path: '/questions'
+      fullPath: '/admin/questions'
+      preLoaderRoute: typeof AdminQuestionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/students': {
+      id: '/admin/students'
+      path: '/students'
+      fullPath: '/admin/students'
+      preLoaderRoute: typeof AdminStudentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/test-attempts': {
+      id: '/admin/test-attempts'
+      path: '/test-attempts'
+      fullPath: '/admin/test-attempts'
+      preLoaderRoute: typeof AdminTestAttemptsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/test-templates': {
+      id: '/admin/test-templates'
+      path: '/test-templates'
+      fullPath: '/admin/test-templates'
+      preLoaderRoute: typeof AdminTestTemplatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/student/': {
       id: '/student/'
       path: '/'
@@ -346,24 +627,100 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentIndexRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/student/account-settings': {
+      id: '/student/account-settings'
+      path: '/account-settings'
+      fullPath: '/student/account-settings'
+      preLoaderRoute: typeof StudentAccountSettingsRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/browse-tests': {
+      id: '/student/browse-tests'
+      path: '/browse-tests'
+      fullPath: '/student/browse-tests'
+      preLoaderRoute: typeof StudentBrowseTestsRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/my-tests': {
+      id: '/student/my-tests'
+      path: '/my-tests'
+      fullPath: '/student/my-tests'
+      preLoaderRoute: typeof StudentMyTestsRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/profile': {
+      id: '/student/profile'
+      path: '/profile'
+      fullPath: '/student/profile'
+      preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/purchases': {
+      id: '/student/purchases'
+      path: '/purchases'
+      fullPath: '/student/purchases'
+      preLoaderRoute: typeof StudentPurchasesRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/test-history': {
+      id: '/student/test-history'
+      path: '/test-history'
+      fullPath: '/student/test-history'
+      preLoaderRoute: typeof StudentTestHistoryRouteImport
+      parentRoute: typeof StudentRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAiEvaluationsRoute: typeof AdminAiEvaluationsRoute
+  AdminAuditLogsRoute: typeof AdminAuditLogsRoute
+  AdminContentImportsRoute: typeof AdminContentImportsRoute
+  AdminCouponsRoute: typeof AdminCouponsRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminPlatformSettingsRoute: typeof AdminPlatformSettingsRoute
+  AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminStudentsRoute: typeof AdminStudentsRoute
+  AdminTestAttemptsRoute: typeof AdminTestAttemptsRoute
+  AdminTestTemplatesRoute: typeof AdminTestTemplatesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAiEvaluationsRoute: AdminAiEvaluationsRoute,
+  AdminAuditLogsRoute: AdminAuditLogsRoute,
+  AdminContentImportsRoute: AdminContentImportsRoute,
+  AdminCouponsRoute: AdminCouponsRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminPlatformSettingsRoute: AdminPlatformSettingsRoute,
+  AdminQuestionsRoute: AdminQuestionsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminStudentsRoute: AdminStudentsRoute,
+  AdminTestAttemptsRoute: AdminTestAttemptsRoute,
+  AdminTestTemplatesRoute: AdminTestTemplatesRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface StudentRouteChildren {
+  StudentAccountSettingsRoute: typeof StudentAccountSettingsRoute
+  StudentBrowseTestsRoute: typeof StudentBrowseTestsRoute
+  StudentMyTestsRoute: typeof StudentMyTestsRoute
+  StudentProfileRoute: typeof StudentProfileRoute
+  StudentPurchasesRoute: typeof StudentPurchasesRoute
+  StudentTestHistoryRoute: typeof StudentTestHistoryRoute
   StudentIndexRoute: typeof StudentIndexRoute
 }
 
 const StudentRouteChildren: StudentRouteChildren = {
+  StudentAccountSettingsRoute: StudentAccountSettingsRoute,
+  StudentBrowseTestsRoute: StudentBrowseTestsRoute,
+  StudentMyTestsRoute: StudentMyTestsRoute,
+  StudentProfileRoute: StudentProfileRoute,
+  StudentPurchasesRoute: StudentPurchasesRoute,
+  StudentTestHistoryRoute: StudentTestHistoryRoute,
   StudentIndexRoute: StudentIndexRoute,
 }
 
