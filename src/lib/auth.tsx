@@ -105,7 +105,7 @@ export function RequireRole({ role, children }: { role: UserRole; children: Reac
   useEffect(() => {
     if (!ready) return;
     if (!user) {
-      void navigate({ to: "/login", search: { redirect: role } });
+      void navigate({ to: "/login" });
       return;
     }
     if (user.role !== role) {
