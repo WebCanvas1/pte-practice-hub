@@ -25,7 +25,7 @@ export interface NavItem {
   label: string;
   to: string;
   icon: LucideIcon;
-  exact?: boolean;
+  exact?: boolean | undefined;
 }
 
 export const publicNav: { label: string; to: string }[] = [

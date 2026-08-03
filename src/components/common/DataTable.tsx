@@ -13,17 +13,17 @@ import { EmptyState, LoadingState } from "@/components/common/ui-blocks";
 export interface DataTableColumn<T> {
   key: string;
   header: string;
-  align?: "left" | "right";
+  align?: "left" | "right" | undefined;
   render: (row: T) => ReactNode;
 }
 
 interface DataTableProps<T> {
-  caption?: string;
+  caption?: string | undefined;
   columns: DataTableColumn<T>[];
   rows: T[];
-  loading?: boolean;
-  emptyTitle?: string;
-  emptyDescription?: string;
+  loading?: boolean | undefined;
+  emptyTitle?: string | undefined;
+  emptyDescription?: string | undefined;
   getRowKey: (row: T, index: number) => string;
 }
 

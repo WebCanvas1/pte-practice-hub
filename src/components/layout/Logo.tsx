@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
-export function Logo({ className, to = "/" }: { className?: string; to?: string }) {
+export function Logo({ className, to = "/" }: { className?: string | undefined; to?: string | undefined }) {
   return (
     <Link
       to={to}

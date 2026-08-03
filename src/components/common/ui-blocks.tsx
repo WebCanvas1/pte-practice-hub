@@ -15,7 +15,7 @@ export function PageHeader({
   actions,
 }: {
   title: string;
-  description?: string;
+  description?: string | undefined;
   actions?: ReactNode;
 }) {
   return (
@@ -42,9 +42,9 @@ export function StatCard({
 }: {
   label: string;
   value: string;
-  hint?: string;
-  icon?: LucideIcon;
-  trend?: { value: string; positive?: boolean };
+  hint?: string | undefined;
+  icon?: LucideIcon | undefined;
+  trend?: { value: string; positive?: boolean } | undefined;
 }) {
   return (
     <Card className="shadow-card">
@@ -77,8 +77,8 @@ export function ProgressStat({
 }: {
   label: string;
   value: number;
-  max?: number;
-  caption?: string;
+  max?: number | undefined;
+  caption?: string | undefined;
 }) {
   const pct = Math.round((value / max) * 100);
   return (
@@ -108,11 +108,11 @@ export function EmptyState({
   action,
   className,
 }: {
-  icon?: LucideIcon;
+  icon?: LucideIcon | undefined;
   title: string;
-  description?: string;
+  description?: string | undefined;
   action?: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <div
@@ -161,7 +161,7 @@ export function SectionCard({
   children,
 }: {
   title: string;
-  description?: string;
+  description?: string | undefined;
   actions?: ReactNode;
   children: ReactNode;
 }) {
