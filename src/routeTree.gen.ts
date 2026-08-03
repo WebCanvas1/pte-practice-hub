@@ -37,9 +37,11 @@ import { Route as AdminTestAttemptsRouteImport } from './routes/admin.test-attem
 import { Route as AdminTestTemplatesRouteImport } from './routes/admin.test-templates'
 import { Route as StudentIndexRouteImport } from './routes/student.index'
 import { Route as StudentAccountSettingsRouteImport } from './routes/student.account-settings'
+import { Route as StudentAiRecommendationsRouteImport } from './routes/student.ai-recommendations'
 import { Route as StudentBrowseTestsRouteImport } from './routes/student.browse-tests'
 import { Route as StudentMyTestsRouteImport } from './routes/student.my-tests'
 import { Route as StudentProfileRouteImport } from './routes/student.profile'
+import { Route as StudentProgressRouteImport } from './routes/student.progress'
 import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
 
@@ -183,6 +185,12 @@ const StudentAccountSettingsRoute = StudentAccountSettingsRouteImport.update({
   path: '/account-settings',
   getParentRoute: () => StudentRoute,
 } as any)
+const StudentAiRecommendationsRoute =
+  StudentAiRecommendationsRouteImport.update({
+    id: '/ai-recommendations',
+    path: '/ai-recommendations',
+    getParentRoute: () => StudentRoute,
+  } as any)
 const StudentBrowseTestsRoute = StudentBrowseTestsRouteImport.update({
   id: '/browse-tests',
   path: '/browse-tests',
@@ -196,6 +204,11 @@ const StudentMyTestsRoute = StudentMyTestsRouteImport.update({
 const StudentProfileRoute = StudentProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentProgressRoute = StudentProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => StudentRoute,
 } as any)
 const StudentPurchasesRoute = StudentPurchasesRouteImport.update({
@@ -236,9 +249,11 @@ export interface FileRoutesByFullPath {
   '/admin/test-attempts': typeof AdminTestAttemptsRoute
   '/admin/test-templates': typeof AdminTestTemplatesRoute
   '/student/account-settings': typeof StudentAccountSettingsRoute
+  '/student/ai-recommendations': typeof StudentAiRecommendationsRoute
   '/student/browse-tests': typeof StudentBrowseTestsRoute
   '/student/my-tests': typeof StudentMyTestsRoute
   '/student/profile': typeof StudentProfileRoute
+  '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -269,9 +284,11 @@ export interface FileRoutesByTo {
   '/admin/test-attempts': typeof AdminTestAttemptsRoute
   '/admin/test-templates': typeof AdminTestTemplatesRoute
   '/student/account-settings': typeof StudentAccountSettingsRoute
+  '/student/ai-recommendations': typeof StudentAiRecommendationsRoute
   '/student/browse-tests': typeof StudentBrowseTestsRoute
   '/student/my-tests': typeof StudentMyTestsRoute
   '/student/profile': typeof StudentProfileRoute
+  '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin': typeof AdminIndexRoute
@@ -305,9 +322,11 @@ export interface FileRoutesById {
   '/admin/test-attempts': typeof AdminTestAttemptsRoute
   '/admin/test-templates': typeof AdminTestTemplatesRoute
   '/student/account-settings': typeof StudentAccountSettingsRoute
+  '/student/ai-recommendations': typeof StudentAiRecommendationsRoute
   '/student/browse-tests': typeof StudentBrowseTestsRoute
   '/student/my-tests': typeof StudentMyTestsRoute
   '/student/profile': typeof StudentProfileRoute
+  '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -342,9 +361,11 @@ export interface FileRouteTypes {
     | '/admin/test-attempts'
     | '/admin/test-templates'
     | '/student/account-settings'
+    | '/student/ai-recommendations'
     | '/student/browse-tests'
     | '/student/my-tests'
     | '/student/profile'
+    | '/student/progress'
     | '/student/purchases'
     | '/student/test-history'
     | '/admin/'
@@ -375,9 +396,11 @@ export interface FileRouteTypes {
     | '/admin/test-attempts'
     | '/admin/test-templates'
     | '/student/account-settings'
+    | '/student/ai-recommendations'
     | '/student/browse-tests'
     | '/student/my-tests'
     | '/student/profile'
+    | '/student/progress'
     | '/student/purchases'
     | '/student/test-history'
     | '/admin'
@@ -410,9 +433,11 @@ export interface FileRouteTypes {
     | '/admin/test-attempts'
     | '/admin/test-templates'
     | '/student/account-settings'
+    | '/student/ai-recommendations'
     | '/student/browse-tests'
     | '/student/my-tests'
     | '/student/profile'
+    | '/student/progress'
     | '/student/purchases'
     | '/student/test-history'
     | '/admin/'
@@ -634,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentAccountSettingsRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/student/ai-recommendations': {
+      id: '/student/ai-recommendations'
+      path: '/ai-recommendations'
+      fullPath: '/student/ai-recommendations'
+      preLoaderRoute: typeof StudentAiRecommendationsRouteImport
+      parentRoute: typeof StudentRoute
+    }
     '/student/browse-tests': {
       id: '/student/browse-tests'
       path: '/browse-tests'
@@ -653,6 +685,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/student/profile'
       preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/progress': {
+      id: '/student/progress'
+      path: '/progress'
+      fullPath: '/student/progress'
+      preLoaderRoute: typeof StudentProgressRouteImport
       parentRoute: typeof StudentRoute
     }
     '/student/purchases': {
@@ -706,9 +745,11 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface StudentRouteChildren {
   StudentAccountSettingsRoute: typeof StudentAccountSettingsRoute
+  StudentAiRecommendationsRoute: typeof StudentAiRecommendationsRoute
   StudentBrowseTestsRoute: typeof StudentBrowseTestsRoute
   StudentMyTestsRoute: typeof StudentMyTestsRoute
   StudentProfileRoute: typeof StudentProfileRoute
+  StudentProgressRoute: typeof StudentProgressRoute
   StudentPurchasesRoute: typeof StudentPurchasesRoute
   StudentTestHistoryRoute: typeof StudentTestHistoryRoute
   StudentIndexRoute: typeof StudentIndexRoute
@@ -716,9 +757,11 @@ interface StudentRouteChildren {
 
 const StudentRouteChildren: StudentRouteChildren = {
   StudentAccountSettingsRoute: StudentAccountSettingsRoute,
+  StudentAiRecommendationsRoute: StudentAiRecommendationsRoute,
   StudentBrowseTestsRoute: StudentBrowseTestsRoute,
   StudentMyTestsRoute: StudentMyTestsRoute,
   StudentProfileRoute: StudentProfileRoute,
+  StudentProgressRoute: StudentProgressRoute,
   StudentPurchasesRoute: StudentPurchasesRoute,
   StudentTestHistoryRoute: StudentTestHistoryRoute,
   StudentIndexRoute: StudentIndexRoute,
@@ -746,3 +789,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
