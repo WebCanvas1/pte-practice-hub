@@ -31,15 +31,15 @@ export interface R2Bucket {
 }
 
 export interface WorkerEnv {
-  DB?: D1Database;
-  SETTINGS_KV?: KVNamespace;
-  SESSIONS_KV?: KVNamespace;
-  MEDIA?: R2Bucket;
-  SESSION_SECRET?: string;
-  ADMIN_SETUP_SECRET?: string;
-  APP_URL?: string;
-  SUPPORT_EMAIL?: string;
-  CLOUDFLARE_ACCOUNT_ID?: string;
+  DB: D1Database | undefined;
+  SETTINGS_KV: KVNamespace | undefined;
+  SESSIONS_KV: KVNamespace | undefined;
+  MEDIA: R2Bucket | undefined;
+  SESSION_SECRET: string | undefined;
+  ADMIN_SETUP_SECRET: string | undefined;
+  APP_URL: string | undefined;
+  SUPPORT_EMAIL: string | undefined;
+  CLOUDFLARE_ACCOUNT_ID: string | undefined;
 }
 
 let cached: WorkerEnv | undefined;
@@ -49,7 +49,9 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
 
   let bindings: Record<string, unknown> = {};
   try {
-    const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as {
+    // Resolved at runtime only: the module exists in workerd, not in Node dev.
+    const specifier = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ specifier)) as {
       env?: Record<string, unknown>;
     };
     bindings = mod.env ?? {};
@@ -60,7 +62,7 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
   const fromProcess = (key: string) =>
     (bindings[key] as string | undefined) ?? process.env[key] ?? undefined;
 
-  cached = {
+  const resolved: WorkerEnv = {
     DB: bindings["DB"] as D1Database | undefined,
     SETTINGS_KV: bindings["SETTINGS_KV"] as KVNamespace | undefined,
     SESSIONS_KV: bindings["SESSIONS_KV"] as KVNamespace | undefined,
@@ -72,7 +74,8 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
     CLOUDFLARE_ACCOUNT_ID: fromProcess("CLOUDFLARE_ACCOUNT_ID"),
   };
 
-  return cached;
+  cached = resolved;
+  return resolved;
 }
 
 export function appUrl(env: WorkerEnv, request: Request): string {
