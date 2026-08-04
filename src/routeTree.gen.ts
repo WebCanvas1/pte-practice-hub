@@ -44,6 +44,7 @@ import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as StudentProgressRouteImport } from './routes/student.progress'
 import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
+import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -221,6 +222,11 @@ const StudentTestHistoryRoute = StudentTestHistoryRouteImport.update({
   path: '/test-history',
   getParentRoute: () => StudentRoute,
 } as any)
+const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
+  id: '/api/public/auth/$action',
+  path: '/api/public/auth/$action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/student': typeof StudentIndexRoute
+  '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/student/test-history'
     | '/admin/'
     | '/student/'
+    | '/api/public/auth/$action'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/student/test-history'
     | '/admin'
     | '/student'
+    | '/api/public/auth/$action'
   id:
     | '__root__'
     | '/'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/student/test-history'
     | '/admin/'
     | '/student/'
+    | '/api/public/auth/$action'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -459,6 +471,7 @@ export interface RootRouteChildren {
   StudentRoute: typeof StudentRouteWithChildren
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TestModulesRoute: typeof TestModulesRoute
+  ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -708,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentTestHistoryRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/api/public/auth/$action': {
+      id: '/api/public/auth/$action'
+      path: '/api/public/auth/$action'
+      fullPath: '/api/public/auth/$action'
+      preLoaderRoute: typeof ApiPublicAuthActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -785,6 +805,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudentRoute: StudentRouteWithChildren,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TestModulesRoute: TestModulesRoute,
+  ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
