@@ -24,6 +24,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as TestModulesRouteImport } from './routes/test-modules'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAiEvaluationsRouteImport } from './routes/admin.ai-evaluations'
 import { Route as AdminAuditLogsRouteImport } from './routes/admin.audit-logs'
@@ -120,6 +121,11 @@ const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
 const TestModulesRoute = TestModulesRouteImport.update({
   id: '/test-modules',
   path: '/test-modules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/student': typeof StudentRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/student': typeof StudentRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/student'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/verify-email'
     | '/admin/ai-evaluations'
     | '/admin/audit-logs'
     | '/admin/content-imports'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/verify-email'
     | '/admin/ai-evaluations'
     | '/admin/audit-logs'
     | '/admin/content-imports'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/student'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/verify-email'
     | '/admin/ai-evaluations'
     | '/admin/audit-logs'
     | '/admin/content-imports'
@@ -484,6 +496,7 @@ export interface RootRouteChildren {
   StudentRoute: typeof StudentRouteWithChildren
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TestModulesRoute: typeof TestModulesRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
 }
 
@@ -592,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/test-modules'
       fullPath: '/test-modules'
       preLoaderRoute: typeof TestModulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -826,6 +846,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudentRoute: StudentRouteWithChildren,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TestModulesRoute: TestModulesRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
 }
 export const routeTree = rootRouteImport
