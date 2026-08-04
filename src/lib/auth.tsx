@@ -1,87 +1,105 @@
 /**
- * Placeholder authentication layer.
+ * Authentication state backed by the Cloudflare Worker API.
  *
- * There is intentionally NO backend yet. The session is stored in
- * localStorage so the dashboards can be reviewed before Cloudflare
- * D1 / Workers auth is wired up. Swap the functions below for real
- * calls to `/api/auth/*` Worker routes later — the component API
- * (useAuth, RequireRole) should not need to change.
+ * The session itself is an HTTP-only cookie set by the Worker, so refreshing
+ * the page keeps the user signed in: on mount we simply ask the server who we
+ * are via GET /api/public/auth/session.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+
+import { authApi } from "@/lib/api";
 
 export type UserRole = "student" | "admin";
 
-export interface DemoUser {
+export interface AuthUser {
   id: string;
-  name: string;
   email: string;
+  emailVerified: boolean;
   role: UserRole;
+  roles: UserRole[];
+  firstName: string;
+  lastName: string;
+  country: string;
+  timezone: string;
+  emailPreferences: { marketing: boolean; product: boolean };
+  deletionRequested: boolean;
+  /** Convenience display name used by the dashboard chrome. */
+  name: string;
 }
 
-const STORAGE_KEY = "pte_demo_session";
+interface SessionResponse {
+  user: Omit<AuthUser, "name"> | null;
+  storage?: "d1" | "memory";
+}
+
+function withName(user: Omit<AuthUser, "name"> | null): AuthUser | null {
+  if (!user) return null;
+  const name = `${user.firstName} ${user.lastName}`.trim();
+  return { ...user, name: name.length > 0 ? name : user.email };
+}
 
 interface AuthContextValue {
-  user: DemoUser | null;
+  user: AuthUser | null;
   ready: boolean;
-  signIn: (email: string, role?: UserRole, name?: string) => DemoUser;
-  register: (name: string, email: string) => DemoUser;
-  signOut: () => void;
+  /** "memory" means no D1 binding is attached (local dev fallback). */
+  storage: "d1" | "memory" | null;
+  refresh: () => Promise<AuthUser | null>;
+  setUser: (user: Omit<AuthUser, "name"> | null) => void;
+  signOut: () => Promise<void>;
+  signOutEverywhere: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readSession(): DemoUser | null {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as DemoUser) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<DemoUser | null>(null);
+  const [user, setUserState] = useState<AuthUser | null>(null);
+  const [storage, setStorage] = useState<"d1" | "memory" | null>(null);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    setUser(readSession());
-    setReady(true);
+  const refresh = useCallback(async () => {
+    try {
+      const data = await authApi<SessionResponse>("session");
+      const next = withName(data.user);
+      setUserState(next);
+      setStorage(data.storage ?? null);
+      return next;
+    } catch {
+      setUserState(null);
+      return null;
+    } finally {
+      setReady(true);
+    }
   }, []);
 
-  const persist = useCallback((next: DemoUser | null) => {
-    setUser(next);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const setUser = useCallback((next: Omit<AuthUser, "name"> | null) => {
+    setUserState(withName(next));
+  }, []);
+
+  const signOut = useCallback(async () => {
     try {
-      if (next) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      else window.localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* storage unavailable — session stays in memory only */
+      await authApi("logout", {});
+    } finally {
+      setUserState(null);
+    }
+  }, []);
+
+  const signOutEverywhere = useCallback(async () => {
+    try {
+      await authApi("logout-all", {});
+    } finally {
+      setUserState(null);
     }
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      ready,
-      signIn: (email, role = "student", name) => {
-        const next: DemoUser = {
-          id: "demo-user",
-          email,
-          role,
-          name: name ?? email.split("@")[0]?.replace(/[._-]/g, " ") ?? "Student",
-        };
-        persist(next);
-        return next;
-      },
-      register: (name, email) => {
-        const next: DemoUser = { id: "demo-user", name, email, role: "student" };
-        persist(next);
-        return next;
-      },
-      signOut: () => persist(null),
-    }),
-    [user, ready, persist],
+    () => ({ user, ready, storage, refresh, setUser, signOut, signOutEverywhere }),
+    [user, ready, storage, refresh, setUser, signOut, signOutEverywhere],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -94,26 +112,26 @@ export function useAuth() {
 }
 
 /**
- * Route protection placeholder. Redirects to the login screen when the
- * demo session does not match the required role. Replace with a real
- * `beforeLoad` session check once Workers auth exists.
+ * Client-side route guard. Server handlers enforce the same rules — this only
+ * controls what is rendered and where the user is sent.
  */
 export function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
   const { user, ready } = useAuth();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     if (!ready) return;
     if (!user) {
-      void navigate({ to: "/login" });
+      void navigate({ to: "/login", search: { redirect: pathname } });
       return;
     }
-    if (user.role !== role) {
-      void navigate({ to: user.role === "admin" ? "/admin" : "/student" });
+    if (!user.roles.includes(role)) {
+      void navigate({ to: user.roles.includes("admin") ? "/admin" : "/student" });
     }
-  }, [ready, user, role, navigate]);
+  }, [ready, user, role, navigate, pathname]);
 
-  if (!ready || !user || user.role !== role) {
+  if (!ready || !user || !user.roles.includes(role)) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6" role="status">
         <p className="text-sm text-muted-foreground">Checking your access…</p>

@@ -1,0 +1,84 @@
+/**
+ * Cloudflare binding + secret resolution.
+ *
+ * In production the Worker receives its bindings from wrangler.toml
+ * (`cloudflare:workers` exposes them as `env`). During local `vite dev`
+ * there is no workerd runtime, so bindings are absent and the app falls
+ * back to the in-memory development store (see store.server.ts).
+ */
+
+export interface D1PreparedStatement {
+  bind: (...values: unknown[]) => D1PreparedStatement;
+  first: <T = Record<string, unknown>>() => Promise<T | null>;
+  all: <T = Record<string, unknown>>() => Promise<{ results: T[] }>;
+  run: () => Promise<unknown>;
+}
+
+export interface D1Database {
+  prepare: (query: string) => D1PreparedStatement;
+}
+
+export interface KVNamespace {
+  get: (key: string) => Promise<string | null>;
+  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>;
+  delete: (key: string) => Promise<void>;
+}
+
+export interface R2Bucket {
+  get: (key: string) => Promise<unknown>;
+  put: (key: string, value: unknown) => Promise<unknown>;
+  delete: (key: string) => Promise<void>;
+}
+
+export interface WorkerEnv {
+  DB: D1Database | undefined;
+  SETTINGS_KV: KVNamespace | undefined;
+  SESSIONS_KV: KVNamespace | undefined;
+  MEDIA: R2Bucket | undefined;
+  SESSION_SECRET: string | undefined;
+  ADMIN_SETUP_SECRET: string | undefined;
+  APP_URL: string | undefined;
+  SUPPORT_EMAIL: string | undefined;
+  CLOUDFLARE_ACCOUNT_ID: string | undefined;
+}
+
+let cached: WorkerEnv | undefined;
+
+export async function getWorkerEnv(): Promise<WorkerEnv> {
+  if (cached) return cached;
+
+  let bindings: Record<string, unknown> = {};
+  try {
+    // Resolved at runtime only: the module exists in workerd, not in Node dev.
+    const specifier = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ specifier)) as {
+      env?: Record<string, unknown>;
+    };
+    bindings = mod.env ?? {};
+  } catch {
+    bindings = {};
+  }
+
+  const fromProcess = (key: string) =>
+    (bindings[key] as string | undefined) ?? process.env[key] ?? undefined;
+
+  const resolved: WorkerEnv = {
+    DB: bindings["DB"] as D1Database | undefined,
+    SETTINGS_KV: bindings["SETTINGS_KV"] as KVNamespace | undefined,
+    SESSIONS_KV: bindings["SESSIONS_KV"] as KVNamespace | undefined,
+    MEDIA: bindings["MEDIA"] as R2Bucket | undefined,
+    SESSION_SECRET: fromProcess("SESSION_SECRET"),
+    ADMIN_SETUP_SECRET: fromProcess("ADMIN_SETUP_SECRET"),
+    APP_URL: fromProcess("APP_URL"),
+    SUPPORT_EMAIL: fromProcess("SUPPORT_EMAIL"),
+    CLOUDFLARE_ACCOUNT_ID: fromProcess("CLOUDFLARE_ACCOUNT_ID"),
+  };
+
+  cached = resolved;
+  return resolved;
+}
+
+export function appUrl(env: WorkerEnv, request: Request): string {
+  if (env.APP_URL && env.APP_URL.length > 0) return env.APP_URL.replace(/\/$/, "");
+  return new URL(request.url).origin;
+}

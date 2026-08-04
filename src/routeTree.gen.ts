@@ -20,9 +20,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as TestModulesRouteImport } from './routes/test-modules'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAiEvaluationsRouteImport } from './routes/admin.ai-evaluations'
 import { Route as AdminAuditLogsRouteImport } from './routes/admin.audit-logs'
@@ -44,6 +46,7 @@ import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as StudentProgressRouteImport } from './routes/student.progress'
 import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
+import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -100,6 +103,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
   path: '/student',
@@ -113,6 +121,11 @@ const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
 const TestModulesRoute = TestModulesRouteImport.update({
   id: '/test-modules',
   path: '/test-modules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -221,6 +234,11 @@ const StudentTestHistoryRoute = StudentTestHistoryRouteImport.update({
   path: '/test-history',
   getParentRoute: () => StudentRoute,
 } as any)
+const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
+  id: '/api/public/auth/$action',
+  path: '/api/public/auth/$action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -234,9 +252,11 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/student': typeof StudentRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
@@ -258,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -270,8 +291,10 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
@@ -293,6 +316,7 @@ export interface FileRoutesByTo {
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/student': typeof StudentIndexRoute
+  '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -307,9 +331,11 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/student': typeof StudentRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/test-modules': typeof TestModulesRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/ai-evaluations': typeof AdminAiEvaluationsRoute
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
@@ -331,6 +357,7 @@ export interface FileRoutesById {
   '/student/test-history': typeof StudentTestHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -346,9 +373,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy-policy'
     | '/register'
+    | '/reset-password'
     | '/student'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/verify-email'
     | '/admin/ai-evaluations'
     | '/admin/audit-logs'
     | '/admin/content-imports'
@@ -370,6 +399,7 @@ export interface FileRouteTypes {
     | '/student/test-history'
     | '/admin/'
     | '/student/'
+    | '/api/public/auth/$action'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -382,8 +412,10 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy-policy'
     | '/register'
+    | '/reset-password'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/verify-email'
     | '/admin/ai-evaluations'
     | '/admin/audit-logs'
     | '/admin/content-imports'
@@ -405,6 +437,7 @@ export interface FileRouteTypes {
     | '/student/test-history'
     | '/admin'
     | '/student'
+    | '/api/public/auth/$action'
   id:
     | '__root__'
     | '/'
@@ -418,9 +451,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy-policy'
     | '/register'
+    | '/reset-password'
     | '/student'
     | '/terms-and-conditions'
     | '/test-modules'
+    | '/verify-email'
     | '/admin/ai-evaluations'
     | '/admin/audit-logs'
     | '/admin/content-imports'
@@ -442,6 +477,7 @@ export interface FileRouteTypes {
     | '/student/test-history'
     | '/admin/'
     | '/student/'
+    | '/api/public/auth/$action'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -456,9 +492,12 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   StudentRoute: typeof StudentRouteWithChildren
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TestModulesRoute: typeof TestModulesRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -540,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/student': {
       id: '/student'
       path: '/student'
@@ -559,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/test-modules'
       fullPath: '/test-modules'
       preLoaderRoute: typeof TestModulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -708,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentTestHistoryRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/api/public/auth/$action': {
+      id: '/api/public/auth/$action'
+      path: '/api/public/auth/$action'
+      fullPath: '/api/public/auth/$action'
+      preLoaderRoute: typeof ApiPublicAuthActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -782,9 +842,12 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   StudentRoute: StudentRouteWithChildren,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TestModulesRoute: TestModulesRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
+  ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

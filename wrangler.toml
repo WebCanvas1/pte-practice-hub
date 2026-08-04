@@ -1,0 +1,45 @@
+# Wrangler configuration for the PTE practice portal Worker.
+#
+# The Vite/Nitro build emits a Cloudflare Worker bundle in `dist/`; this file
+# declares the bindings the Worker API expects at runtime. Secrets are NOT
+# stored here — set them with `wrangler secret put <NAME>`.
+
+name = "pte-portal"
+main = "dist/server/index.mjs"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist/client"
+binding = "ASSETS"
+
+[vars]
+APP_URL = "https://pte-portal.example.com"
+SUPPORT_EMAIL = "support@scorepath.example"
+
+# Relational data: users, profiles, sessions, tokens, audit logs, settings
+[[d1_databases]]
+binding = "DB"
+database_name = "pte_portal"
+database_id = "00000000-0000-0000-0000-000000000000" # replace after `wrangler d1 create pte_portal`
+migrations_dir = "migrations"
+
+# Platform settings / cached config
+[[kv_namespaces]]
+binding = "SETTINGS_KV"
+id = "replace-with-settings-kv-id"
+
+# Session lookups and login rate-limit counters
+[[kv_namespaces]]
+binding = "SESSIONS_KV"
+id = "replace-with-sessions-kv-id"
+
+# Audio recordings and future media assets
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "pte-portal-media"
+
+# Secrets (set via `wrangler secret put`):
+#   SESSION_SECRET
+#   ADMIN_SETUP_SECRET
+#   CLOUDFLARE_ACCOUNT_ID (only needed by CI / API tooling)
