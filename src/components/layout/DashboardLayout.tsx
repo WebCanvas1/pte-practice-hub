@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, Menu } from "lucide-react";
 
 import { Logo } from "@/components/layout/Logo";
@@ -49,6 +49,7 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: (() =>
 export function DashboardLayout({ items, areaLabel, children }: DashboardLayoutProps) {
   const [open, setOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const sidebarBody = (onNavigate?: () => void) => (
     <div className="flex h-full flex-col gap-6 p-4">
@@ -66,11 +67,16 @@ export function DashboardLayout({ items, areaLabel, children }: DashboardLayoutP
           <p className="truncate text-sm font-medium">{user?.name ?? "Guest"}</p>
           <p className="truncate text-xs text-muted-foreground">{user?.email ?? "not signed in"}</p>
         </div>
-        <Button variant="outline" className="w-full justify-start gap-3" onClick={signOut} asChild>
-          <Link to="/" onClick={signOut}>
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Logout
-          </Link>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-3"
+          onClick={async () => {
+            await signOut();
+            void navigate({ to: "/login" });
+          }}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Logout
         </Button>
       </div>
     </div>
