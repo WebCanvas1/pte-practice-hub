@@ -4,30 +4,41 @@ import { toast } from "sonner";
 
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { siteConfig } from "@/config/site";
-import { useAuth } from "@/lib/auth";
+import { ApiError, authApi } from "@/lib/api";
+import { useAuth, type AuthUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search["redirect"] === "string" ? (search["redirect"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: `Log in — ${siteConfig.name}` },
-      { name: "description", content: `Log in to your ${siteConfig.name} student dashboard to continue your PTE practice.` },
+      {
+        name: "description",
+        content: `Log in to your ${siteConfig.name} student dashboard to continue your PTE practice.`,
+      },
       { property: "og:title", content: `Log in — ${siteConfig.name}` },
-      { property: "og:description", content: "Access your practice tests, scores and AI feedback." },
+      {
+        property: "og:description",
+        content: "Access your practice tests, scores and AI feedback.",
+      },
     ],
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const { signIn } = useAuth();
+  const { setUser } = useAuth();
   const navigate = useNavigate();
-  const [asAdmin, setAsAdmin] = useState(false);
+  const search = Route.useSearch();
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Record<string, string>>({});
 
   return (
     <AuthLayout
@@ -44,16 +55,39 @@ function LoginPage() {
     >
       <form
         className="grid gap-5"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
-          const email = String(form.get("email") ?? "");
           setSubmitting(true);
-          signIn(email, asAdmin ? "admin" : "student");
-          toast.success("Signed in (demo session)");
-          void navigate({ to: asAdmin ? "/admin" : "/student" });
+          setFormError(null);
+          setFields({});
+          try {
+            const data = await authApi<{ user: Omit<AuthUser, "name"> }>("login", {
+              email: String(form.get("email") ?? ""),
+              password: String(form.get("password") ?? ""),
+            });
+            setUser(data.user);
+            toast.success("Signed in");
+            const target =
+              search.redirect ?? (data.user.roles.includes("admin") ? "/admin" : "/student");
+            void navigate({ to: target });
+          } catch (error) {
+            const apiError =
+              error instanceof ApiError ? error : new ApiError(0, "Unable to sign in.");
+            setFormError(apiError.message);
+            setFields(apiError.fields);
+          } finally {
+            setSubmitting(false);
+          }
         }}
       >
+        {formError ? (
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>Sign in failed</AlertTitle>
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        ) : null}
+
         <div className="grid gap-2">
           <Label htmlFor="login-email">Email address</Label>
           <Input
@@ -63,7 +97,14 @@ function LoginPage() {
             autoComplete="email"
             required
             placeholder="you@example.com"
+            aria-invalid={Boolean(fields["email"])}
+            aria-describedby={fields["email"] ? "login-email-error" : undefined}
           />
+          {fields["email"] ? (
+            <p id="login-email-error" className="text-xs text-destructive">
+              {fields["email"]}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid gap-2">
@@ -79,37 +120,17 @@ function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            minLength={8}
-            aria-describedby="login-password-hint"
+            aria-invalid={Boolean(fields["password"])}
           />
-          <p id="login-password-hint" className="text-xs text-muted-foreground">
-            Minimum 8 characters.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="login-admin"
-            checked={asAdmin}
-            onCheckedChange={(value) => setAsAdmin(value === true)}
-          />
-          <Label htmlFor="login-admin" className="text-sm font-normal">
-            Log in to the admin portal
-          </Label>
+          {fields["password"] ? (
+            <p className="text-xs text-destructive">{fields["password"]}</p>
+          ) : null}
         </div>
 
         <Button type="submit" variant="hero" size="lg" disabled={submitting}>
           {submitting ? "Signing in…" : "Log in"}
         </Button>
       </form>
-
-      <Alert className="mt-6">
-        <AlertTitle>Demo authentication</AlertTitle>
-        <AlertDescription>
-          Any email and password creates a local demo session so the dashboards can be reviewed.
-          Real authentication arrives with the Cloudflare Workers backend.
-        </AlertDescription>
-      </Alert>
     </AuthLayout>
   );
 }
