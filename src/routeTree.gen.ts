@@ -48,6 +48,7 @@ import { Route as StudentPurchasesRouteImport } from './routes/student.purchases
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
 import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
 import { Route as ApiPublicQuestionsActionRouteImport } from './routes/api/public/questions/$action'
+import { Route as ApiPublicTestsActionRouteImport } from './routes/api/public/tests/$action'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -246,6 +247,11 @@ const ApiPublicQuestionsActionRoute =
     path: '/api/public/questions/$action',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTestsActionRoute = ApiPublicTestsActionRouteImport.update({
+  id: '/api/public/tests/$action',
+  path: '/api/public/tests/$action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/student/': typeof StudentIndexRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
+  '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/student': typeof StudentIndexRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
+  '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/student/': typeof StudentIndexRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
+  '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/student/'
     | '/api/public/auth/$action'
     | '/api/public/questions/$action'
+    | '/api/public/tests/$action'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/student'
     | '/api/public/auth/$action'
     | '/api/public/questions/$action'
+    | '/api/public/tests/$action'
   id:
     | '__root__'
     | '/'
@@ -491,6 +502,7 @@ export interface FileRouteTypes {
     | '/student/'
     | '/api/public/auth/$action'
     | '/api/public/questions/$action'
+    | '/api/public/tests/$action'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -512,6 +524,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
   ApiPublicQuestionsActionRoute: typeof ApiPublicQuestionsActionRoute
+  ApiPublicTestsActionRoute: typeof ApiPublicTestsActionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicQuestionsActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/tests/$action': {
+      id: '/api/public/tests/$action'
+      path: '/api/public/tests/$action'
+      fullPath: '/api/public/tests/$action'
+      preLoaderRoute: typeof ApiPublicTestsActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -870,17 +890,8 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
   ApiPublicQuestionsActionRoute: ApiPublicQuestionsActionRoute,
+  ApiPublicTestsActionRoute: ApiPublicTestsActionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
