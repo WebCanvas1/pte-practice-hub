@@ -78,7 +78,8 @@ function validateInput(input: TemplateWriteInput): void {
   if (input.testType !== "mock" && !input.module)
     fields["module"] = "Choose a module for this test type.";
   if (input.testType === "module" && input.difficulty === "mixed")
-    fields["difficulty"] = "Mixed difficulty is only available for complete mock tests.";
+    fields["difficulty"] =
+      "Mixed difficulty is only available for complete mock tests and practice sets.";
   for (const rule of input.rules) {
     const def = questionTypeMap[rule.typeKey];
     if (!def) {
