@@ -203,7 +203,7 @@ export function seedTemplates(): TestTemplateRecord[] {
       timeLimitMinutes: def.timeLimitMinutes,
       targetScore: def.targetScore,
       instructions: def.instructions,
-      isActive: true,
+      isActive: def.isActive ?? true,
       purchasable: true,
       version: 1,
       createdAt: created,

@@ -127,3 +127,26 @@ export const generatePreview = (id: string) =>
   testsApi<GeneratePreviewResponse>("generate-preview", undefined, { id });
 export const validateTemplateApi = (id: string) =>
   testsApi<{ validation: TemplateValidation }>("template-validate", undefined, { id });
+
+/** Payload accepted by template-create / template-update. */
+export interface TemplateInput {
+  name: string;
+  description: string;
+  testType: TestTemplateRecord["testType"];
+  module: ModuleKey | null;
+  difficulty: TestTemplateRecord["difficulty"];
+  price: number;
+  currency: string;
+  timeLimitMinutes: number;
+  targetScore: number | null;
+  instructions: string;
+  isActive: boolean;
+  purchasable: boolean;
+  rules: { typeKey: string; questionCount: number; difficulty?: DifficultyKey | undefined }[];
+}
+
+export const createTemplate = (template: TemplateInput) =>
+  testsApi<{ template: TestTemplateRecord }>("template-create", { template });
+export const updateTemplate = (id: string, template: TemplateInput, bumpVersion: boolean) =>
+  testsApi<{ template: TestTemplateRecord }>("template-update", { id, template, bumpVersion });
+export const deleteTemplate = (id: string) => testsApi<{ ok: true }>("template-delete", { id });

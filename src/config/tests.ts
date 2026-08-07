@@ -191,6 +191,12 @@ export interface DefaultTemplateDef {
   timeLimitMinutes: number;
   targetScore: number;
   instructions: string;
+  /**
+   * Seeded templates that the starter question bank cannot fill yet ship as
+   * inactive; admins activate them once enough questions are published (the
+   * validation tool blocks activation until then).
+   */
+  isActive?: boolean;
   /** typeKey → question count. */
   distribution: Record<string, number>;
 }
@@ -267,9 +273,32 @@ export const defaultTemplates: DefaultTemplateDef[] = [
       targetScore: moduleTargets[difficulty],
       instructions:
         "Complete every task in order. Timing is per task where the PTE exam is timed per task; the overall limit applies to the whole test.",
+      // Full 30-question tests need a deeper bank than the starter seed holds.
+      isActive: false,
       distribution: moduleDistributions[module],
     })),
   ),
+  /**
+   * Starter practice sets: one question per task type at mixed difficulty, so
+   * students can run a complete generated test against the starter question
+   * bank while the full-length templates are still being filled.
+   */
+  ...(["speaking", "reading", "writing", "listening"] as ModuleKey[]).map((module) => ({
+    slug: `${module}-starter-set`,
+    name: `${moduleLabels[module]} Starter Set`,
+    description: `A short ${moduleLabels[module].toLowerCase()} practice set with one question from every task type in the module.`,
+    testType: "practice_set" as TestType,
+    module,
+    difficulty: "mixed" as TemplateDifficulty,
+    timeLimitMinutes: Math.max(10, Math.round(moduleTimeLimits[module] / 2)),
+    targetScore: 65,
+    instructions:
+      "A short warm-up set: one question from each task type in this module. Complete every task in order.",
+    isActive: true,
+    distribution: Object.fromEntries(
+      Object.keys(moduleDistributions[module]).map((typeKey) => [typeKey, 1]),
+    ),
+  })),
   {
     slug: "full-mock-mixed",
     name: "Complete Mock Test — All Modules",
@@ -282,6 +311,7 @@ export const defaultTemplates: DefaultTemplateDef[] = [
     targetScore: 65,
     instructions:
       "This mock test runs in exam order: Speaking, Writing, Reading and then Listening. Allow the full time in one sitting.",
+    isActive: false,
     distribution: {
       read_aloud: 3,
       repeat_sentence: 4,
