@@ -302,7 +302,7 @@ function Runner({ session }: { session: RunnerSession }) {
     (payload: AnswerPayload, immediate: boolean, position: number) => {
       autosave.save(
         {
-          attemptQuestionId: payload.attemptQuestionId ?? question.attemptQuestionId,
+          attemptQuestionId: question.attemptQuestionId,
           text: payload.text,
           data: {
             selections: payload.selections,
@@ -323,13 +323,13 @@ function Runner({ session }: { session: RunnerSession }) {
   const update = (patch: Partial<AnswerPayload>, immediate = false) => {
     setAnswers((current) => {
       const next = { ...(current[question.attemptQuestionId] ?? emptyAnswer()), ...patch };
-      pushSave({ ...next, attemptQuestionId: question.attemptQuestionId } as AnswerPayload, immediate, index + 1);
+      pushSave(next, immediate, index + 1);
       return { ...current, [question.attemptQuestionId]: next };
     });
   };
 
   const goTo = async (nextIndex: number) => {
-    pushSave({ ...answer, attemptQuestionId: question.attemptQuestionId } as AnswerPayload, true, nextIndex + 1);
+    pushSave(answer, true, nextIndex + 1);
     setIndex(nextIndex);
   };
 
