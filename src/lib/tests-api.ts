@@ -10,6 +10,7 @@ import type {
   TestTemplateRecord,
 } from "@/config/tests";
 import type { DifficultyKey, ModuleKey } from "@/config/questions";
+import type { AnswerData, RunnerSession } from "@/config/test-runner";
 
 const TESTS_API_BASE = "/api/public/tests";
 
@@ -150,3 +151,58 @@ export const createTemplate = (template: TemplateInput) =>
 export const updateTemplate = (id: string, template: TemplateInput, bumpVersion: boolean) =>
   testsApi<{ template: TestTemplateRecord }>("template-update", { id, template, bumpVersion });
 export const deleteTemplate = (id: string) => testsApi<{ ok: true }>("template-delete", { id });
+
+/* ------------------------------- test runner ------------------------------- */
+
+export const fetchRunnerSession = (attemptId: string) =>
+  testsApi<{ session: RunnerSession }>("runner-session", undefined, { id: attemptId });
+
+export const saveAnswerApi = (input: {
+  attemptId: string;
+  attemptQuestionId: string;
+  text: string;
+  data: AnswerData;
+  timeSpentSeconds: number;
+  currentQuestion?: number;
+}) => testsApi<{ savedAt: string; revisionCount: number }>("save-answer", input);
+
+export const fetchAttemptReview = (attemptId: string) =>
+  testsApi<{
+    items: {
+      attemptQuestionId: string;
+      position: number;
+      typeName: string;
+      module: string;
+      answered: boolean;
+      flagged: boolean;
+    }[];
+    answered: number;
+    unanswered: number;
+    flagged: number;
+  }>("attempt-review", undefined, { id: attemptId });
+
+export const submitTest = (attemptId: string, reason: "manual" | "time_expired" = "manual") =>
+  testsApi<{ attempt: TestAttemptRecord }>("submit-test", { attemptId, reason });
+
+/** Raw upload: the body is the recorded audio blob, not JSON. */
+export async function uploadResponseAudio(
+  attemptId: string,
+  attemptQuestionId: string,
+  blob: Blob,
+): Promise<{ audioKey: string; savedAt: string }> {
+  const params = new URLSearchParams({ attemptId, attemptQuestionId });
+  const headers: Record<string, string> = { "content-type": blob.type || "audio/webm" };
+  const csrf = csrfTokenFromCookie();
+  if (csrf) headers["x-csrf-token"] = csrf;
+  const response = await fetch(`${TESTS_API_BASE}/upload-audio?${params.toString()}`, {
+    method: "POST",
+    credentials: "include",
+    headers,
+    body: blob,
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { audioKey: string; savedAt: string; error?: string }
+    | null;
+  if (!response.ok) throw new ApiError(response.status, payload?.error ?? "Upload failed.");
+  return payload as { audioKey: string; savedAt: string };
+}

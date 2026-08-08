@@ -28,6 +28,7 @@ import {
   type TestType,
 } from "@/config/tests";
 import { pricingConfig } from "@/config/site";
+import type { AnswerData } from "@/config/test-runner";
 
 const now = () => new Date().toISOString();
 
@@ -120,7 +121,44 @@ export interface TestStore {
     eventType: string,
     metadata?: Record<string, unknown>,
   ) => Promise<void>;
+
+  /** Full question snapshots for an attempt (server-side only). */
+  attemptQuestions: (attemptId: string) => Promise<AttemptQuestionRecord[]>;
+  listAnswers: (attemptId: string) => Promise<StoredAnswer[]>;
+  saveAnswer: (input: SaveAnswerInput) => Promise<StoredAnswer>;
+  finalizeAnswers: (attemptId: string) => Promise<void>;
+  setCurrentQuestion: (attemptId: string, position: number) => Promise<void>;
 }
+
+/** Persisted student answer. */
+export interface StoredAnswer {
+  attemptQuestionId: string;
+  text: string;
+  data: AnswerData;
+  audioKey: string | null;
+  timeSpentSeconds: number;
+  revisionCount: number;
+  isFinal: boolean;
+  updatedAt: string;
+}
+
+export interface SaveAnswerInput {
+  attemptId: string;
+  attemptQuestionId: string;
+  userId: string;
+  text: string;
+  data: AnswerData;
+  audioKey?: string | null | undefined;
+  timeSpentSeconds: number;
+}
+
+const emptyData = (): AnswerData => ({
+  selections: [],
+  blanks: {},
+  ordering: [],
+  highlighted: [],
+  flagged: false,
+});
 
 /* --------------------------- template normalisation ------------------------ */
 
@@ -417,6 +455,8 @@ interface MemoryDb {
   templates: Map<string, TestTemplateRecord>;
   entitlements: Map<string, EntitlementRecord & { pricePaid: number; currency: string }>;
   attempts: Map<string, TestAttemptRecord>;
+  attemptQuestions: Map<string, AttemptQuestionRecord[]>;
+  answers: Map<string, StoredAnswer & { attemptId: string }>;
   events: { attemptId: string; userId: string | null; eventType: string; createdAt: string }[];
 }
 
@@ -424,6 +464,8 @@ const memoryDb: MemoryDb = {
   templates: new Map(seedTemplates().map((template) => [template.id, template])),
   entitlements: new Map(),
   attempts: new Map(),
+  attemptQuestions: new Map(),
+  answers: new Map(),
   events: [],
 };
 
@@ -566,6 +608,7 @@ function createMemoryTestStore(): TestStore {
         questions: questions.map(({ snapshot: _snapshot, ...summary }) => summary),
       };
       db.attempts.set(record.id, record);
+      db.attemptQuestions.set(record.id, questions);
       return record;
     },
 
@@ -590,6 +633,50 @@ function createMemoryTestStore(): TestStore {
 
     async logEvent(attemptId, userId, eventType) {
       db.events.push({ attemptId, userId, eventType, createdAt: now() });
+    },
+
+    async attemptQuestions(attemptId) {
+      return db.attemptQuestions.get(attemptId) ?? [];
+    },
+
+    async listAnswers(attemptId) {
+      return [...db.answers.values()].filter((answer) => answer.attemptId === attemptId);
+    },
+
+    async saveAnswer(input) {
+      const existing = db.answers.get(input.attemptQuestionId);
+      if (existing?.isFinal) return existing;
+      const record = {
+        attemptId: input.attemptId,
+        attemptQuestionId: input.attemptQuestionId,
+        text: input.text,
+        data: input.data,
+        audioKey: input.audioKey ?? existing?.audioKey ?? null,
+        timeSpentSeconds: Math.max(input.timeSpentSeconds, existing?.timeSpentSeconds ?? 0),
+        revisionCount: (existing?.revisionCount ?? 0) + 1,
+        isFinal: false,
+        updatedAt: now(),
+      };
+      db.answers.set(input.attemptQuestionId, record);
+      const attempt = db.attempts.get(input.attemptId);
+      if (attempt) {
+        db.attempts.set(input.attemptId, {
+          ...attempt,
+          answeredCount: (await store.listAnswers(input.attemptId)).length,
+        });
+      }
+      return record;
+    },
+
+    async finalizeAnswers(attemptId) {
+      for (const [key, answer] of db.answers) {
+        if (answer.attemptId === attemptId) db.answers.set(key, { ...answer, isFinal: true });
+      }
+    },
+
+    async setCurrentQuestion(attemptId, position) {
+      const attempt = db.attempts.get(attemptId);
+      if (attempt) db.attempts.set(attemptId, { ...attempt, currentQuestion: position });
     },
   };
 
@@ -1084,6 +1171,134 @@ function createD1TestStore(DB: D1Database): TestStore {
         JSON.stringify(metadata ?? {}),
         now(),
       );
+    },
+
+    async attemptQuestions(attemptId) {
+      const rows = await all<AttemptQuestionRow & { snapshot: string }>(
+        `SELECT * FROM attempt_questions WHERE attempt_id = ? ORDER BY position ASC`,
+        attemptId,
+      );
+      return rows.map((row) => ({
+        id: row.id,
+        position: row.position,
+        questionId: row.question_id,
+        questionVersion: row.question_version,
+        module: row.module_key,
+        typeKey: row.type_key,
+        typeName: questionTypeMap[row.type_key]?.name ?? row.type_key,
+        difficulty: row.difficulty,
+        title: row.title,
+        estimatedSeconds: row.estimated_seconds,
+        snapshot: JSON.parse(row.snapshot) as QuestionRecord,
+      }));
+    },
+
+    async listAnswers(attemptId) {
+      const rows = await all<{
+        attempt_question_id: string;
+        answer_text: string;
+        answer_json: string;
+        audio_r2_key: string | null;
+        time_spent_seconds: number;
+        revision_count: number;
+        is_final: number;
+        updated_at: string;
+      }>(`SELECT * FROM student_answers WHERE attempt_id = ?`, attemptId);
+      return rows.map((row) => ({
+        attemptQuestionId: row.attempt_question_id,
+        text: row.answer_text,
+        data: { ...emptyData(), ...(JSON.parse(row.answer_json) as Partial<AnswerData>) },
+        audioKey: row.audio_r2_key,
+        timeSpentSeconds: row.time_spent_seconds,
+        revisionCount: row.revision_count,
+        isFinal: row.is_final === 1,
+        updatedAt: row.updated_at,
+      }));
+    },
+
+    async saveAnswer(input) {
+      const existing = await first<{
+        id: string;
+        revision_count: number;
+        is_final: number;
+        audio_r2_key: string | null;
+        time_spent_seconds: number;
+      }>(`SELECT * FROM student_answers WHERE attempt_question_id = ?`, input.attemptQuestionId);
+      const timestamp = now();
+      const json = JSON.stringify(input.data);
+      const audioKey = input.audioKey ?? existing?.audio_r2_key ?? null;
+
+      if (existing?.is_final === 1) {
+        const answers = await store.listAnswers(input.attemptId);
+        const found = answers.find((row) => row.attemptQuestionId === input.attemptQuestionId);
+        if (found) return found;
+      }
+
+      const id = existing?.id ?? newId("ans");
+      const revision = (existing?.revision_count ?? 0) + 1;
+      const timeSpent = Math.max(input.timeSpentSeconds, existing?.time_spent_seconds ?? 0);
+
+      if (existing) {
+        await run(
+          `UPDATE student_answers SET answer_text = ?, answer_json = ?, audio_r2_key = ?,
+             time_spent_seconds = ?, revision_count = ?, updated_at = ? WHERE id = ?`,
+          input.text,
+          json,
+          audioKey,
+          timeSpent,
+          revision,
+          timestamp,
+          id,
+        );
+      } else {
+        await run(
+          `INSERT INTO student_answers (id, attempt_id, attempt_question_id, user_id, answer_text,
+             answer_json, audio_r2_key, time_spent_seconds, revision_count, is_final, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+          id,
+          input.attemptId,
+          input.attemptQuestionId,
+          input.userId,
+          input.text,
+          json,
+          audioKey,
+          timeSpent,
+          revision,
+          timestamp,
+          timestamp,
+        );
+      }
+
+      // Append-only revision history for every saved change.
+      await run(
+        `INSERT INTO answer_revisions (id, answer_id, revision_number, answer_text, answer_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        newId("rev"),
+        id,
+        revision,
+        input.text,
+        json,
+        timestamp,
+      );
+
+      return {
+        attemptQuestionId: input.attemptQuestionId,
+        text: input.text,
+        data: input.data,
+        audioKey,
+        timeSpentSeconds: timeSpent,
+        revisionCount: revision,
+        isFinal: false,
+        updatedAt: timestamp,
+      };
+    },
+
+    async finalizeAnswers(attemptId) {
+      await run(`UPDATE student_answers SET is_final = 1 WHERE attempt_id = ?`, attemptId);
+    },
+
+    async setCurrentQuestion(attemptId, position) {
+      await run(`UPDATE test_attempts SET current_question = ? WHERE id = ?`, position, attemptId);
     },
   };
 

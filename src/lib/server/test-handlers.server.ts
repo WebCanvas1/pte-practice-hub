@@ -14,6 +14,7 @@ import {
   templateDifficulties,
   testTypes,
   type AttemptStatus,
+  type TestAttemptRecord,
   type TestTemplateRecord,
 } from "@/config/tests";
 import { pricingConfig } from "@/config/site";
@@ -29,7 +30,43 @@ import {
   type TemplateWriteInput,
   type TestStore,
 } from "./tests.server";
+import {
+  assertEditable,
+  attemptDeadline,
+  buildReview,
+  buildSession,
+  getMediaObject,
+  normaliseAnswer,
+  putResponseAudio,
+  questionMediaKey,
+  requireAttemptQuestion,
+  responseAudioKey,
+} from "./attempts.server";
 import { newId } from "./crypto.server";
+
+/* ------------------------------ runner schemas ----------------------------- */
+
+const answerDataSchema = z.object({
+  selections: z.array(z.string().max(120)).max(20).default([]),
+  blanks: z.record(z.string(), z.string().max(200)).default({}),
+  ordering: z.array(z.string().max(60)).max(20).default([]),
+  highlighted: z.array(z.number().int().min(0).max(5000)).max(200).default([]),
+  flagged: z.boolean().default(false),
+});
+
+const saveAnswerSchema = z.object({
+  attemptId: z.string().trim().min(3),
+  attemptQuestionId: z.string().trim().min(3),
+  text: z.string().max(20000).default(""),
+  data: answerDataSchema,
+  timeSpentSeconds: z.number().int().min(0).max(100000).default(0),
+  currentQuestion: z.number().int().min(1).max(200).optional(),
+});
+
+const submitSchema = z.object({
+  attemptId: z.string().trim().min(3),
+  reason: z.enum(["manual", "time_expired"]).default("manual"),
+});
 
 /* --------------------------------- schemas -------------------------------- */
 
@@ -451,7 +488,193 @@ const handlers: Record<
       return json({ attempt: updated });
     },
   },
+  /* ----------------------------- test runner ------------------------------ */
+
+  /** Sanitised session payload: questions, saved answers, deadline. */
+  "runner-session": {
+    method: "GET",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      const attempt = await requireOwnAttempt(ctx, request, userId);
+      const template = await ctx.tests.getTemplate(attempt.templateId);
+      const live = await expireIfOverdue(ctx, attempt, userId);
+      const session = await buildSession(ctx.tests, live, template?.instructions ?? "");
+      return json({ session });
+    },
+  },
+
+  "save-answer": {
+    method: "POST",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      assertCsrf(request);
+      const data = await parseBody(request, saveAnswerSchema);
+      const attempt = await requireOwnAttemptId(ctx, data.attemptId, userId);
+      const live = await expireIfOverdue(ctx, attempt, userId);
+      assertEditable(live);
+      const row = await requireAttemptQuestion(ctx.tests, live, data.attemptQuestionId);
+      const normalised = normaliseAnswer(row.typeKey, data);
+      const saved = await ctx.tests.saveAnswer({
+        attemptId: live.id,
+        attemptQuestionId: row.id,
+        userId,
+        text: normalised.text,
+        data: normalised.data,
+        timeSpentSeconds: data.timeSpentSeconds,
+      });
+      if (data.currentQuestion) await ctx.tests.setCurrentQuestion(live.id, data.currentQuestion);
+      await ctx.tests.logEvent(live.id, userId, "answer.autosave", {
+        attemptQuestionId: row.id,
+        revision: saved.revisionCount,
+      });
+      return json({ savedAt: saved.updatedAt, revisionCount: saved.revisionCount });
+    },
+  },
+
+  /** Upload a spoken response to R2 and attach its key to the answer. */
+  "upload-audio": {
+    method: "POST",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      assertCsrf(request);
+      const url = new URL(request.url);
+      const attemptId = url.searchParams.get("attemptId") ?? "";
+      const attemptQuestionId = url.searchParams.get("attemptQuestionId") ?? "";
+      const attempt = await requireOwnAttemptId(ctx, attemptId, userId);
+      const live = await expireIfOverdue(ctx, attempt, userId);
+      assertEditable(live);
+      const row = await requireAttemptQuestion(ctx.tests, live, attemptQuestionId);
+      if (!questionTypeMap[row.typeKey]?.capabilities.spokenResponse)
+        throw new HttpError(400, "This question does not accept a recording.");
+
+      const body = await request.arrayBuffer();
+      if (body.byteLength === 0) throw new HttpError(400, "The recording was empty.");
+      if (body.byteLength > 8 * 1024 * 1024)
+        throw new HttpError(413, "That recording is too large.");
+
+      const key = responseAudioKey(live.id, row.id);
+      await putResponseAudio(key, body, request.headers.get("content-type") ?? "audio/webm");
+      const existing = (await ctx.tests.listAnswers(live.id)).find(
+        (answer) => answer.attemptQuestionId === row.id,
+      );
+      const saved = await ctx.tests.saveAnswer({
+        attemptId: live.id,
+        attemptQuestionId: row.id,
+        userId,
+        text: "",
+        data: existing?.data ?? normaliseAnswer(row.typeKey, {}).data,
+        audioKey: key,
+        timeSpentSeconds: existing?.timeSpentSeconds ?? 0,
+      });
+      await ctx.tests.logEvent(live.id, userId, "answer.audio_uploaded", {
+        attemptQuestionId: row.id,
+        bytes: body.byteLength,
+      });
+      return json({ audioKey: key, savedAt: saved.updatedAt });
+    },
+  },
+
+  /** Protected media streaming for question audio/images. */
+  media: {
+    method: "GET",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      const url = new URL(request.url);
+      const attemptQuestionId = url.searchParams.get("aq") ?? "";
+      const kind = url.searchParams.get("kind") === "image" ? "image" : "audio";
+      const attempts = await ctx.tests.listAttempts(userId);
+      for (const attempt of attempts) {
+        const rows = await ctx.tests.attemptQuestions(attempt.id);
+        const row = rows.find((entry) => entry.id === attemptQuestionId);
+        if (!row) continue;
+        const asset = kind === "audio" ? row.snapshot.audio : row.snapshot.image;
+        if (!asset) throw new HttpError(404, "Media not found.");
+        const object = await getMediaObject(questionMediaKey(row.snapshot, kind));
+        if (object) {
+          return new Response(object.body, {
+            headers: {
+              "content-type": object.contentType,
+              "cache-control": "private, max-age=3600",
+            },
+          });
+        }
+        // Seeded content still lives at its source URL; redirect rather than 404.
+        return new Response(null, { status: 302, headers: { location: asset.url } });
+      }
+      throw new HttpError(404, "Media not found.");
+    },
+  },
+
+  /** Submission review screen: answered / unanswered / flagged. */
+  "attempt-review": {
+    method: "GET",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      const attempt = await requireOwnAttempt(ctx, request, userId);
+      return json(await buildReview(ctx.tests, attempt));
+    },
+  },
+
+  "submit-test": {
+    method: "POST",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      assertCsrf(request);
+      const data = await parseBody(request, submitSchema);
+      const attempt = await requireOwnAttemptId(ctx, data.attemptId, userId);
+      assertEditable(attempt);
+      const review = await buildReview(ctx.tests, attempt);
+      await ctx.tests.finalizeAnswers(attempt.id);
+      const timestamp = new Date().toISOString();
+      const updated = await ctx.tests.setAttemptStatus(attempt.id, "submitted", {
+        submittedAt: timestamp,
+      });
+      await ctx.tests.logEvent(attempt.id, userId, "attempt.submitted", {
+        reason: data.reason,
+        answered: review.answered,
+        unanswered: review.unanswered,
+      });
+      await audit(ctx, request, {
+        userId,
+        action: "test_attempt.submit",
+        outcome: "success",
+        metadata: { attemptId: attempt.id, reason: data.reason },
+      });
+      return json({ attempt: updated, review });
+    },
+  },
 };
+
+/* ---------------------------- runner helpers ------------------------------ */
+
+async function requireOwnAttemptId(ctx: Ctx, id: string, userId: string) {
+  const attempt = await ctx.tests.getAttempt(id);
+  if (!attempt || attempt.userId !== userId) throw new HttpError(404, "Test attempt not found.");
+  return attempt;
+}
+
+async function requireOwnAttempt(ctx: Ctx, request: Request, userId: string) {
+  const url = new URL(request.url);
+  return requireOwnAttemptId(ctx, url.searchParams.get("id") ?? "", userId);
+}
+
+/** Time-expired attempts are submitted automatically on the next request. */
+async function expireIfOverdue(ctx: Ctx, attempt: TestAttemptRecord, userId: string) {
+  const deadline = attemptDeadline(attempt);
+  if (
+    !deadline ||
+    Date.now() < new Date(deadline).getTime() ||
+    !["in_progress", "paused", "ready", "purchased"].includes(attempt.status)
+  ) {
+    return attempt;
+  }
+  await ctx.tests.finalizeAnswers(attempt.id);
+  const updated = await ctx.tests.setAttemptStatus(attempt.id, "submitted", {
+    submittedAt: new Date().toISOString(),
+  });
+  await ctx.tests.logEvent(attempt.id, userId, "attempt.auto_submitted", { reason: "time_expired" });
+  return updated;
+}
 
 export async function handleTestRequest(request: Request, action: string): Promise<Response> {
   try {

@@ -46,6 +46,7 @@ import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as StudentProgressRouteImport } from './routes/student.progress'
 import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
+import { Route as TestAttemptIdRouteImport } from './routes/test.$attemptId'
 import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
 import { Route as ApiPublicQuestionsActionRouteImport } from './routes/api/public/questions/$action'
 import { Route as ApiPublicTestsActionRouteImport } from './routes/api/public/tests/$action'
@@ -236,6 +237,11 @@ const StudentTestHistoryRoute = StudentTestHistoryRouteImport.update({
   path: '/test-history',
   getParentRoute: () => StudentRoute,
 } as any)
+const TestAttemptIdRoute = TestAttemptIdRouteImport.update({
+  id: '/test/$attemptId',
+  path: '/test/$attemptId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
   id: '/api/public/auth/$action',
   path: '/api/public/auth/$action',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
   '/student/test-history': typeof StudentTestHistoryRoute
+  '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
@@ -329,6 +336,7 @@ export interface FileRoutesByTo {
   '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
   '/student/test-history': typeof StudentTestHistoryRoute
+  '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin': typeof AdminIndexRoute
   '/student': typeof StudentIndexRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
   '/student/test-history': typeof StudentTestHistoryRoute
+  '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
@@ -416,6 +425,7 @@ export interface FileRouteTypes {
     | '/student/progress'
     | '/student/purchases'
     | '/student/test-history'
+    | '/test/$attemptId'
     | '/admin/'
     | '/student/'
     | '/api/public/auth/$action'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/student/progress'
     | '/student/purchases'
     | '/student/test-history'
+    | '/test/$attemptId'
     | '/admin'
     | '/student'
     | '/api/public/auth/$action'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/student/progress'
     | '/student/purchases'
     | '/student/test-history'
+    | '/test/$attemptId'
     | '/admin/'
     | '/student/'
     | '/api/public/auth/$action'
@@ -522,6 +534,7 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TestModulesRoute: typeof TestModulesRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  TestAttemptIdRoute: typeof TestAttemptIdRoute
   ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
   ApiPublicQuestionsActionRoute: typeof ApiPublicQuestionsActionRoute
   ApiPublicTestsActionRoute: typeof ApiPublicTestsActionRoute
@@ -788,6 +801,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentTestHistoryRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/test/$attemptId': {
+      id: '/test/$attemptId'
+      path: '/test/$attemptId'
+      fullPath: '/test/$attemptId'
+      preLoaderRoute: typeof TestAttemptIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/auth/$action': {
       id: '/api/public/auth/$action'
       path: '/api/public/auth/$action'
@@ -888,6 +908,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TestModulesRoute: TestModulesRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  TestAttemptIdRoute: TestAttemptIdRoute,
   ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
   ApiPublicQuestionsActionRoute: ApiPublicQuestionsActionRoute,
   ApiPublicTestsActionRoute: ApiPublicTestsActionRoute,
@@ -895,13 +916,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
