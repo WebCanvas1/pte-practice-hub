@@ -21,18 +21,18 @@ SUPPORT_EMAIL = "support@scorepath.example"
 [[d1_databases]]
 binding = "DB"
 database_name = "pte_portal"
-database_id = "00000000-0000-0000-0000-000000000000" # replace after `wrangler d1 create pte_portal`
+database_id = "00523f5d-56d8-4aaf-8472-657c605bcb21"
 migrations_dir = "migrations"
 
 # Platform settings / cached config
 [[kv_namespaces]]
 binding = "SETTINGS_KV"
-id = "replace-with-settings-kv-id"
+id = "117de9c53b7b42388ae4f598f901bdbe"
 
 # Session lookups and login rate-limit counters
 [[kv_namespaces]]
 binding = "SESSIONS_KV"
-id = "replace-with-sessions-kv-id"
+id = "24b60fa9e882467baf37d8654c74455e"
 
 # Audio recordings and future media assets
 [[r2_buckets]]
@@ -40,6 +40,6 @@ binding = "MEDIA"
 bucket_name = "pte-portal-media"
 
 # Secrets (set via `wrangler secret put`):
-#   SESSION_SECRET
-#   ADMIN_SETUP_SECRET
-#   CLOUDFLARE_ACCOUNT_ID (only needed by CI / API tooling)
+# SESSION_SECRET
+# ADMIN_SETUP_SECRET
+# CLOUDFLARE_ACCOUNT_ID (only needed by CI / API tooling)
