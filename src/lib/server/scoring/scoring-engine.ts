@@ -74,7 +74,7 @@ export function scoreAttempt(
             : raw.earned > 0
               ? ("partial" as const)
               : ("incorrect" as const),
-      studentResponse: { text: answer.text, data: answer.data },
+      studentResponse: { text: answer.text, data: answer.data, audioKey: answer.audioKey ?? null },
       correctAnswer: raw.correctAnswer,
       breakdown: raw.breakdown,
     };

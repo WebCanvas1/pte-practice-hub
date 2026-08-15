@@ -51,6 +51,7 @@ import {
 } from "./scoring/scoring-store.server";
 import type { AttemptScoreResult } from "./scoring/types";
 import { evaluateWritingQuestions } from "./ai/writing-evaluator.server";
+import { evaluateSpeakingQuestions } from "./ai/speaking-evaluator.server";
 
 /* ------------------------------ runner schemas ----------------------------- */
 
@@ -173,6 +174,7 @@ async function scoreStoredAttempt(
   await ctx.tests.setAttemptStatus(attempt.id, "scoring");
   let result = scoreAttempt(attempt.id, questions, answers);
   result = await evaluateWritingQuestions(ctx.env, attempt.userId, result, questions);
+  result = await evaluateSpeakingQuestions(ctx.env, attempt.userId, result, questions);
   await persistScoreResult(ctx.env.DB, result);
   await ctx.tests.setAttemptStatus(
     attempt.id,
