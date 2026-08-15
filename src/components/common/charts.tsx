@@ -53,14 +53,20 @@ export function ScoreTrendChart({ data }: { data: { label: string; score: number
   );
 }
 
-export function ModuleScoreChart({ data }: { data: { label: string; score: number }[] }) {
+export function ModuleScoreChart({
+  data,
+  domainMax = 100,
+}: {
+  data: { label: string; score: number }[];
+  domainMax?: number | "auto";
+}) {
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis dataKey="label" {...axisProps} />
-          <YAxis domain={[0, 90]} {...axisProps} />
+          <YAxis domain={[0, domainMax]} {...axisProps} />
           <Tooltip contentStyle={tooltipStyle} />
           <Bar dataKey="score" fill="var(--accent)" radius={[8, 8, 0, 0]} maxBarSize={48} />
         </BarChart>

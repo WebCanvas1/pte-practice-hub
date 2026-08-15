@@ -1,32 +1,58 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { PageHeader, SectionCard, EmptyState } from "@/components/common/ui-blocks";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { DataTable } from "@/components/common/DataTable";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader, SectionCard } from "@/components/common/ui-blocks";
 import { Button } from "@/components/ui/button";
-import { siteConfig, formatPrice } from "@/config/site";
-import * as data from "@/data/placeholder";
+import { fetchMyTests } from "@/lib/tests-api";
 
-export const Route = createFileRoute("/student/test-history")({
-  head: () => ({ meta: [{ title: "Test History — " + siteConfig.name }] }),
-  component: Page,
-});
-
+export const Route = createFileRoute("/student/test-history")({ component: Page });
 function Page() {
+  const { data } = useQuery({ queryKey: ["my-tests"], queryFn: fetchMyTests });
+  const rows = (data?.attempts ?? []).filter(
+    (a) => a.status === "completed" || a.status === "submitted",
+  );
   return (
     <>
-      <PageHeader title="Test History" description="Every completed attempt with its score report." />
-      <SectionCard title="Completed attempts" description="Placeholder data">
+      <PageHeader
+        title="Test History"
+        description="Every submitted attempt with its protected score report."
+      />
+      <SectionCard
+        title="Completed attempts"
+        description={`${rows.length} result${rows.length === 1 ? "" : "s"}`}
+      >
         <DataTable
           caption="Completed attempts"
-          rows={data.testHistory}
-          getRowKey={(row) => row.id}
-          emptyTitle="Nothing here yet"
+          rows={rows}
+          getRowKey={(r) => r.id}
+          emptyTitle="No completed tests yet"
           columns={[
-              { key: "id", header: "Attempt", render: (r) => r.id },
-              { key: "title", header: "Test", render: (r) => r.title },
-              { key: "date", header: "Date", render: (r) => r.date },
-              { key: "score", header: "Score", align: "right", render: (r) => `${r.score}/90` },
+            { key: "title", header: "Test", render: (r) => r.templateName },
+            {
+              key: "date",
+              header: "Date",
+              render: (r) =>
+                new Date(r.completedAt ?? r.submittedAt ?? r.createdAt).toLocaleDateString("en-AU"),
+            },
+            {
+              key: "score",
+              header: "Score",
+              align: "right",
+              render: (r) =>
+                r.totalScore === null ? "Processing" : `${Math.round(r.totalScore * 0.9)}/90`,
+            },
+            {
+              key: "view",
+              header: "",
+              align: "right",
+              render: (r) => (
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/student/results/$attemptId" params={{ attemptId: r.id }}>
+                    View
+                  </Link>
+                </Button>
+              ),
+            },
           ]}
         />
       </SectionCard>

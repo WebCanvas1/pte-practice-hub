@@ -52,6 +52,13 @@ import {
 import type { AttemptScoreResult } from "./scoring/types";
 import { evaluateWritingQuestions } from "./ai/writing-evaluator.server";
 import { evaluateSpeakingQuestions } from "./ai/speaking-evaluator.server";
+import {
+  adminAnalytics,
+  buildResultAnalysis,
+  loadProgress,
+  persistProgressMetrics,
+  recommendations,
+} from "./analytics.server";
 
 /* ------------------------------ runner schemas ----------------------------- */
 
@@ -89,7 +96,10 @@ const templateSchema = z.object({
   name: z.string().trim().min(3, "Give the template a name.").max(120),
   description: z.string().trim().max(2000).default(""),
   testType: z.enum(testTypes as unknown as [string, ...string[]]),
-  module: z.enum(moduleKeys as [string, ...string[]]).nullable().default(null),
+  module: z
+    .enum(moduleKeys as [string, ...string[]])
+    .nullable()
+    .default(null),
   difficulty: z.enum(templateDifficulties as unknown as [string, ...string[]]),
   price: z.number().min(0).max(999),
   currency: z.string().trim().min(3).max(3).default(pricingConfig.currency),
@@ -165,17 +175,21 @@ async function scoreStoredAttempt(
     ctx.tests.listAnswers(attempt.id),
   ]);
   const answers = new Map(
-    storedAnswers.map((answer) => [answer.attemptQuestionId, {
-      text: answer.text,
-      data: answer.data,
-      audioKey: answer.audioKey,
-    }]),
+    storedAnswers.map((answer) => [
+      answer.attemptQuestionId,
+      {
+        text: answer.text,
+        data: answer.data,
+        audioKey: answer.audioKey,
+      },
+    ]),
   );
   await ctx.tests.setAttemptStatus(attempt.id, "scoring");
   let result = scoreAttempt(attempt.id, questions, answers);
   result = await evaluateWritingQuestions(ctx.env, attempt.userId, result, questions);
   result = await evaluateSpeakingQuestions(ctx.env, attempt.userId, result, questions);
   await persistScoreResult(ctx.env.DB, result);
+  await persistProgressMetrics(ctx.env.DB, attempt.userId, result, storedAnswers);
   await ctx.tests.setAttemptStatus(
     attempt.id,
     result.status === "completed" ? "completed" : "submitted",
@@ -217,7 +231,10 @@ const handlers: Record<
     method: "GET",
     role: "admin",
     handler: async (request, ctx) => {
-      const template = await requireTemplate(ctx, new URL(request.url).searchParams.get("id") ?? "");
+      const template = await requireTemplate(
+        ctx,
+        new URL(request.url).searchParams.get("id") ?? "",
+      );
       const validation = await validateTemplate(ctx.questions, template);
       return json({ template, validation });
     },
@@ -324,7 +341,10 @@ const handlers: Record<
     method: "GET",
     role: "admin",
     handler: async (request, ctx) => {
-      const template = await requireTemplate(ctx, new URL(request.url).searchParams.get("id") ?? "");
+      const template = await requireTemplate(
+        ctx,
+        new URL(request.url).searchParams.get("id") ?? "",
+      );
       return json({ validation: await validateTemplate(ctx.questions, template) });
     },
   },
@@ -334,7 +354,10 @@ const handlers: Record<
     method: "GET",
     role: "admin",
     handler: async (request, ctx) => {
-      const template = await requireTemplate(ctx, new URL(request.url).searchParams.get("id") ?? "");
+      const template = await requireTemplate(
+        ctx,
+        new URL(request.url).searchParams.get("id") ?? "",
+      );
       const result = await generateTest(ctx.questions, template);
       return json({
         template,
@@ -390,6 +413,12 @@ const handlers: Record<
       ).all<Record<string, unknown>>();
       return json({ jobs: rows.results, configured: Boolean(ctx.env.AI) });
     },
+  },
+
+  "admin-analytics": {
+    method: "GET",
+    role: "admin",
+    handler: async (_request, ctx) => json({ analytics: await adminAnalytics(ctx.env.DB) }),
   },
 
   /* ------------------------------ students ----------------------------- */
@@ -534,10 +563,9 @@ const handlers: Record<
     method: "GET",
     role: "user",
     handler: async (request, ctx, userId) => {
-      const attempt = await ctx.tests.getAttempt(
-        new URL(request.url).searchParams.get("id") ?? "",
-      );
-      if (!attempt || attempt.userId !== userId) throw new HttpError(404, "Test attempt not found.");
+      const attempt = await ctx.tests.getAttempt(new URL(request.url).searchParams.get("id") ?? "");
+      if (!attempt || attempt.userId !== userId)
+        throw new HttpError(404, "Test attempt not found.");
       return json({ attempt });
     },
   },
@@ -549,7 +577,8 @@ const handlers: Record<
       assertCsrf(request);
       const data = await parseBody(request, attemptStatusSchema);
       const attempt = await ctx.tests.getAttempt(data.id);
-      if (!attempt || attempt.userId !== userId) throw new HttpError(404, "Test attempt not found.");
+      if (!attempt || attempt.userId !== userId)
+        throw new HttpError(404, "Test attempt not found.");
       const status = data.status as AttemptStatus;
       const allowed: Record<string, AttemptStatus[]> = {
         ready: ["in_progress", "cancelled"],
@@ -711,6 +740,132 @@ const handlers: Record<
     },
   },
 
+  "attempt-analysis": {
+    method: "GET",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      const attempt = await requireOwnAttempt(ctx, request, userId);
+      if (!["submitted", "scoring", "completed"].includes(attempt.status))
+        throw new HttpError(409, "Analysis is available after the test is submitted.");
+      const result = await loadScoreResult(ctx.env.DB, attempt.id);
+      if (!result) throw new HttpError(404, "Analysis is not available yet.");
+      const prior = (await ctx.tests.listAttempts(userId))
+        .filter(
+          (row) =>
+            row.id !== attempt.id && row.createdAt < attempt.createdAt && row.totalScore !== null,
+        )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const [questions, answers] = await Promise.all([
+        ctx.tests.attemptQuestions(attempt.id),
+        ctx.tests.listAnswers(attempt.id),
+      ]);
+      return json({
+        analysis: buildResultAnalysis(
+          attempt,
+          questions,
+          answers,
+          result,
+          prior?.totalScore ?? null,
+        ),
+      });
+    },
+  },
+
+  "attempt-review-detail": {
+    method: "GET",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      const attempt = await requireOwnAttempt(ctx, request, userId);
+      if (!["submitted", "scoring", "completed"].includes(attempt.status))
+        throw new HttpError(409, "Question review is locked until the attempt is submitted.");
+      const result = await loadScoreResult(ctx.env.DB, attempt.id);
+      if (!result) throw new HttpError(404, "Review is not available yet.");
+      const [questions, answers] = await Promise.all([
+        ctx.tests.attemptQuestions(attempt.id),
+        ctx.tests.listAnswers(attempt.id),
+      ]);
+      const byAnswer = new Map(answers.map((row) => [row.attemptQuestionId, row]));
+      const byScore = new Map(result.questions.map((row) => [row.attemptQuestionId, row]));
+      return json({
+        questions: questions.map((question) => {
+          const answer = byAnswer.get(question.id);
+          const score = byScore.get(question.id);
+          const improvements = score?.breakdown["improvements"];
+          return {
+            attemptQuestionId: question.id,
+            position: question.position,
+            title: question.title,
+            type: question.typeName,
+            studentAnswer: score?.studentResponse ?? answer?.text ?? "",
+            correctAnswer: score?.correctAnswer ?? null,
+            explanation: question.snapshot.explanation,
+            modelResponse: question.snapshot.modelAnswer,
+            earned: score?.earned ?? 0,
+            maximum: score?.maximum ?? 0,
+            aiFeedback: score?.breakdown ?? {},
+            improvement:
+              Array.isArray(improvements) && typeof improvements[0] === "string"
+                ? improvements[0]
+                : question.snapshot.explanation,
+          };
+        }),
+      });
+    },
+  },
+
+  progress: {
+    method: "GET",
+    role: "user",
+    handler: async (_request, ctx, userId) =>
+      json({ progress: await loadProgress(ctx.env.DB, userId) }),
+  },
+
+  recommendations: {
+    method: "GET",
+    role: "user",
+    handler: async (_request, ctx, userId) =>
+      json({ recommendations: await recommendations(ctx.env, userId) }),
+  },
+
+  "report-create": {
+    method: "POST",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      assertCsrf(request);
+      const data = await parseBody(request, idSchema);
+      const attempt = await requireOwnAttemptId(ctx, data.id, userId);
+      if (!["submitted", "scoring", "completed"].includes(attempt.status))
+        throw new HttpError(409, "Reports are available after submission.");
+      const result = await loadScoreResult(ctx.env.DB, attempt.id);
+      if (!result) throw new HttpError(404, "Report is not available yet.");
+      const [questions, answers] = await Promise.all([
+        ctx.tests.attemptQuestions(attempt.id),
+        ctx.tests.listAnswers(attempt.id),
+      ]);
+      const analysis = buildResultAnalysis(attempt, questions, answers, result, null);
+      if (ctx.env.DB) {
+        const row = await ctx.env.DB.prepare(
+          `SELECT COALESCE(MAX(version),0)+1 version FROM report_versions WHERE attempt_id=?`,
+        )
+          .bind(attempt.id)
+          .first<{ version: number }>();
+        await ctx.env.DB.prepare(
+          `INSERT INTO report_versions (id,user_id,attempt_id,version,report_json,created_at) VALUES (?,?,?,?,?,?)`,
+        )
+          .bind(
+            newId("rpt"),
+            userId,
+            attempt.id,
+            row?.version ?? 1,
+            JSON.stringify(analysis),
+            new Date().toISOString(),
+          )
+          .run();
+      }
+      return json({ analysis });
+    },
+  },
+
   "submit-test": {
     method: "POST",
     role: "user",
@@ -774,7 +929,9 @@ async function expireIfOverdue(ctx: Ctx, attempt: TestAttemptRecord, userId: str
   const updated = await ctx.tests.setAttemptStatus(attempt.id, "submitted", {
     submittedAt: new Date().toISOString(),
   });
-  await ctx.tests.logEvent(attempt.id, userId, "attempt.auto_submitted", { reason: "time_expired" });
+  await ctx.tests.logEvent(attempt.id, userId, "attempt.auto_submitted", {
+    reason: "time_expired",
+  });
   await scoreStoredAttempt(ctx, updated);
   return (await ctx.tests.getAttempt(attempt.id)) ?? updated;
 }

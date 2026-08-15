@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, Clock3, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { fetchAttemptResult } from "@/lib/tests-api";
+import { ModuleScoreChart } from "@/components/common/charts";
+import { createPrintableReport, fetchAttemptAnalysis, fetchAttemptResult } from "@/lib/tests-api";
 
 export const Route = createFileRoute("/student/results/$attemptId")({
   component: AttemptResultsPage,
@@ -18,6 +19,14 @@ function AttemptResultsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["attempt-result", attemptId],
     queryFn: () => fetchAttemptResult(attemptId),
+  });
+  const analysisQuery = useQuery({
+    queryKey: ["attempt-analysis", attemptId],
+    queryFn: () => fetchAttemptAnalysis(attemptId),
+  });
+  const report = useMutation({
+    mutationFn: () => createPrintableReport(attemptId),
+    onSuccess: () => window.print(),
   });
 
   if (isLoading)
@@ -67,6 +76,117 @@ function AttemptResultsPage() {
           </p>
         </CardContent>
       </Card>
+
+      {analysisQuery.data?.analysis &&
+        (() => {
+          const a = analysisQuery.data.analysis;
+          return (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  ["Test", a.testName],
+                  ["Completed", new Date(a.completionDate).toLocaleDateString("en-AU")],
+                  ["Module", a.module],
+                  ["Difficulty", a.difficulty],
+                  ["Estimated score", `${a.estimatedScore}/90`],
+                  ["Percentage", `${a.percentage}%`],
+                  ["Time taken", `${Math.round(a.timeTakenSeconds / 60)} min`],
+                  ["Attempted", String(a.attempted)],
+                  ["Correct", String(a.correct)],
+                  ["Partially correct", String(a.partial)],
+                  ["Incorrect", String(a.incorrect)],
+                  ["AI evaluation", a.aiStatus],
+                ].map(([name, value]) => (
+                  <Card key={name}>
+                    <CardContent className="pt-5">
+                      <p className="text-xs text-muted-foreground">{name}</p>
+                      <p className="font-semibold">{value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="grid gap-6 lg:grid-cols-3">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Score by question type</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ModuleScoreChart data={a.byQuestionType} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Accuracy by skill</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ModuleScoreChart data={a.bySkill} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Difficulty performance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ModuleScoreChart data={a.byDifficulty} />
+                  </CardContent>
+                </Card>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detailed analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-5 md:grid-cols-2">
+                  <div>
+                    <p className="font-medium">Strongest task</p>
+                    <p className="text-muted-foreground">{a.strongestType}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Weakest task</p>
+                    <p className="text-muted-foreground">{a.weakestType}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Improvement</p>
+                    <p className="text-muted-foreground">
+                      {a.improvement === null
+                        ? "Complete another test to compare."
+                        : `${a.improvement >= 0 ? "+" : ""}${a.improvement}% versus your previous attempt`}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Recommended next step</p>
+                    <p className="text-muted-foreground">
+                      {a.nextDifficulty} {a.nextModule}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Common mistakes</p>
+                    <ul className="list-disc pl-5 text-muted-foreground">
+                      {a.commonMistakes.map((x) => (
+                        <li key={x}>{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium">Time management</p>
+                    <ul className="list-disc pl-5 text-muted-foreground">
+                      {a.timeIssues.map((x) => (
+                        <li key={x}>{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="font-medium">Three priority improvements</p>
+                    <ol className="list-decimal pl-5 text-muted-foreground">
+                      {a.priorities.map((x) => (
+                        <li key={x}>{x}</li>
+                      ))}
+                    </ol>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          );
+        })()}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Object.entries(result.modules).map(([module, score]) => (
@@ -154,9 +274,19 @@ function AttemptResultsPage() {
         </CardContent>
       </Card>
 
-      <Button asChild variant="outline">
-        <Link to="/student/test-history">View test history</Link>
-      </Button>
+      <div className="flex flex-wrap gap-3 print:hidden">
+        <Button asChild>
+          <Link to="/student/review/$attemptId" params={{ attemptId }}>
+            Review questions
+          </Link>
+        </Button>
+        <Button variant="outline" onClick={() => report.mutate()} disabled={report.isPending}>
+          Print report
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/student/test-history">View test history</Link>
+        </Button>
+      </div>
     </div>
   );
 }
