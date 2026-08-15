@@ -43,6 +43,13 @@ import {
   responseAudioKey,
 } from "./attempts.server";
 import { newId } from "./crypto.server";
+import { scoreAttempt } from "./scoring/scoring-engine";
+import {
+  clearScoreResult,
+  loadScoreResult,
+  persistScoreResult,
+} from "./scoring/scoring-store.server";
+import type { AttemptScoreResult } from "./scoring/types";
 
 /* ------------------------------ runner schemas ----------------------------- */
 
@@ -141,6 +148,42 @@ async function requireTemplate(ctx: Ctx, id: string): Promise<TestTemplateRecord
 }
 
 type Handler = (request: Request, ctx: Ctx, userId: string) => Promise<Response>;
+
+async function scoreStoredAttempt(
+  ctx: Ctx,
+  attempt: TestAttemptRecord,
+  force = false,
+): Promise<AttemptScoreResult> {
+  if (!force) {
+    const existing = await loadScoreResult(ctx.env.DB, attempt.id);
+    if (existing) return existing;
+  }
+  const [questions, storedAnswers] = await Promise.all([
+    ctx.tests.attemptQuestions(attempt.id),
+    ctx.tests.listAnswers(attempt.id),
+  ]);
+  const answers = new Map(
+    storedAnswers.map((answer) => [answer.attemptQuestionId, {
+      text: answer.text,
+      data: answer.data,
+      audioKey: answer.audioKey,
+    }]),
+  );
+  await ctx.tests.setAttemptStatus(attempt.id, "scoring");
+  const result = scoreAttempt(attempt.id, questions, answers);
+  await persistScoreResult(ctx.env.DB, result);
+  await ctx.tests.setAttemptStatus(
+    attempt.id,
+    result.status === "completed" ? "completed" : "submitted",
+    result.status === "completed" ? { completedAt: result.scoredAt } : undefined,
+  );
+  await ctx.tests.logEvent(attempt.id, attempt.userId, "attempt.scored", {
+    scoringStatus: result.status,
+    earned: result.overall.earned,
+    maximum: result.overall.maximum,
+  });
+  return result;
+}
 
 const handlers: Record<
   string,
@@ -306,6 +349,28 @@ const handlers: Record<
           version: question.version,
         })),
       });
+    },
+  },
+
+  "attempt-rescore": {
+    method: "POST",
+    role: "admin",
+    handler: async (request, ctx, adminId) => {
+      assertCsrf(request);
+      const data = await parseBody(request, idSchema);
+      const attempt = await ctx.tests.getAttempt(data.id);
+      if (!attempt) throw new HttpError(404, "Test attempt not found.");
+      if (!["submitted", "scoring", "completed"].includes(attempt.status))
+        throw new HttpError(409, "Only submitted attempts can be re-scored.");
+      await clearScoreResult(ctx.env.DB, attempt.id);
+      const result = await scoreStoredAttempt(ctx, attempt, true);
+      await audit(ctx, request, {
+        userId: adminId,
+        action: "test_attempt.rescore",
+        outcome: "success",
+        metadata: { attemptId: attempt.id },
+      });
+      return json({ result });
     },
   },
 
@@ -615,6 +680,19 @@ const handlers: Record<
     },
   },
 
+  "attempt-result": {
+    method: "GET",
+    role: "user",
+    handler: async (request, ctx, userId) => {
+      const attempt = await requireOwnAttempt(ctx, request, userId);
+      if (!["submitted", "scoring", "completed"].includes(attempt.status))
+        throw new HttpError(409, "Results are available after the test is submitted.");
+      const result = await loadScoreResult(ctx.env.DB, attempt.id);
+      if (!result) throw new HttpError(404, "Results are not available yet.");
+      return json({ result });
+    },
+  },
+
   "submit-test": {
     method: "POST",
     role: "user",
@@ -622,6 +700,10 @@ const handlers: Record<
       assertCsrf(request);
       const data = await parseBody(request, submitSchema);
       const attempt = await requireOwnAttemptId(ctx, data.attemptId, userId);
+      if (["submitted", "scoring", "completed"].includes(attempt.status)) {
+        const existing = await loadScoreResult(ctx.env.DB, attempt.id);
+        if (existing) return json({ attempt, result: existing, idempotent: true });
+      }
       assertEditable(attempt);
       const review = await buildReview(ctx.tests, attempt);
       await ctx.tests.finalizeAnswers(attempt.id);
@@ -640,7 +722,9 @@ const handlers: Record<
         outcome: "success",
         metadata: { attemptId: attempt.id, reason: data.reason },
       });
-      return json({ attempt: updated, review });
+      const result = await scoreStoredAttempt(ctx, updated);
+      const scoredAttempt = await ctx.tests.getAttempt(attempt.id);
+      return json({ attempt: scoredAttempt ?? updated, review, result });
     },
   },
 };
@@ -673,7 +757,8 @@ async function expireIfOverdue(ctx: Ctx, attempt: TestAttemptRecord, userId: str
     submittedAt: new Date().toISOString(),
   });
   await ctx.tests.logEvent(attempt.id, userId, "attempt.auto_submitted", { reason: "time_expired" });
-  return updated;
+  await scoreStoredAttempt(ctx, updated);
+  return (await ctx.tests.getAttempt(attempt.id)) ?? updated;
 }
 
 export async function handleTestRequest(request: Request, action: string): Promise<Response> {

@@ -47,6 +47,7 @@ import { Route as StudentProgressRouteImport } from './routes/student.progress'
 import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
 import { Route as TestAttemptIdRouteImport } from './routes/test.$attemptId'
+import { Route as StudentResultsAttemptIdRouteImport } from './routes/student.results.$attemptId'
 import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
 import { Route as ApiPublicQuestionsActionRouteImport } from './routes/api/public/questions/$action'
 import { Route as ApiPublicTestsActionRouteImport } from './routes/api/public/tests/$action'
@@ -242,6 +243,11 @@ const TestAttemptIdRoute = TestAttemptIdRouteImport.update({
   path: '/test/$attemptId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentResultsAttemptIdRoute = StudentResultsAttemptIdRouteImport.update({
+  id: '/results/$attemptId',
+  path: '/results/$attemptId',
+  getParentRoute: () => StudentRoute,
+} as any)
 const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
   id: '/api/public/auth/$action',
   path: '/api/public/auth/$action',
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
   '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByTo {
   '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin': typeof AdminIndexRoute
   '/student': typeof StudentIndexRoute
+  '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
   '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
   '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
@@ -428,6 +437,7 @@ export interface FileRouteTypes {
     | '/test/$attemptId'
     | '/admin/'
     | '/student/'
+    | '/student/results/$attemptId'
     | '/api/public/auth/$action'
     | '/api/public/questions/$action'
     | '/api/public/tests/$action'
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/test/$attemptId'
     | '/admin'
     | '/student'
+    | '/student/results/$attemptId'
     | '/api/public/auth/$action'
     | '/api/public/questions/$action'
     | '/api/public/tests/$action'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/test/$attemptId'
     | '/admin/'
     | '/student/'
+    | '/student/results/$attemptId'
     | '/api/public/auth/$action'
     | '/api/public/questions/$action'
     | '/api/public/tests/$action'
@@ -808,6 +820,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestAttemptIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/results/$attemptId': {
+      id: '/student/results/$attemptId'
+      path: '/results/$attemptId'
+      fullPath: '/student/results/$attemptId'
+      preLoaderRoute: typeof StudentResultsAttemptIdRouteImport
+      parentRoute: typeof StudentRoute
+    }
     '/api/public/auth/$action': {
       id: '/api/public/auth/$action'
       path: '/api/public/auth/$action'
@@ -874,6 +893,7 @@ interface StudentRouteChildren {
   StudentPurchasesRoute: typeof StudentPurchasesRoute
   StudentTestHistoryRoute: typeof StudentTestHistoryRoute
   StudentIndexRoute: typeof StudentIndexRoute
+  StudentResultsAttemptIdRoute: typeof StudentResultsAttemptIdRoute
 }
 
 const StudentRouteChildren: StudentRouteChildren = {
@@ -886,6 +906,7 @@ const StudentRouteChildren: StudentRouteChildren = {
   StudentPurchasesRoute: StudentPurchasesRoute,
   StudentTestHistoryRoute: StudentTestHistoryRoute,
   StudentIndexRoute: StudentIndexRoute,
+  StudentResultsAttemptIdRoute: StudentResultsAttemptIdRoute,
 }
 
 const StudentRouteWithChildren =
@@ -916,3 +937,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
