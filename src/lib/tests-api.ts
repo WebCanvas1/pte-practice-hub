@@ -11,12 +11,22 @@ import type {
 } from "@/config/tests";
 import type { DifficultyKey, ModuleKey } from "@/config/questions";
 import type { AnswerData, RunnerSession } from "@/config/test-runner";
+import type {
+  AdminAnalytics,
+  ProgressData,
+  RecommendationData,
+  ResultAnalysis,
+  ReviewQuestion,
+} from "@/lib/analytics-types";
 
 export interface AttemptResult {
   attemptId: string;
   status: "completed" | "pending_ai";
   overall: { earned: number; maximum: number; percentage: number };
-  modules: Record<string, { earned: number; maximum: number; percentage: number; status?: "pending_ai" }>;
+  modules: Record<
+    string,
+    { earned: number; maximum: number; percentage: number; status?: "pending_ai" }
+  >;
   questions: Array<{
     attemptQuestionId: string;
     typeKey: string;
@@ -226,10 +236,23 @@ export const fetchAttemptReview = (attemptId: string) =>
   }>("attempt-review", undefined, { id: attemptId });
 
 export const submitTest = (attemptId: string, reason: "manual" | "time_expired" = "manual") =>
-  testsApi<{ attempt: TestAttemptRecord; result: AttemptResult }>("submit-test", { attemptId, reason });
+  testsApi<{ attempt: TestAttemptRecord; result: AttemptResult }>("submit-test", {
+    attemptId,
+    reason,
+  });
 
 export const fetchAttemptResult = (attemptId: string) =>
   testsApi<{ result: AttemptResult }>("attempt-result", undefined, { id: attemptId });
+export const fetchAttemptAnalysis = (attemptId: string) =>
+  testsApi<{ analysis: ResultAnalysis }>("attempt-analysis", undefined, { id: attemptId });
+export const fetchAttemptReviewDetail = (attemptId: string) =>
+  testsApi<{ questions: ReviewQuestion[] }>("attempt-review-detail", undefined, { id: attemptId });
+export const fetchProgress = () => testsApi<{ progress: ProgressData }>("progress");
+export const fetchRecommendations = () =>
+  testsApi<{ recommendations: RecommendationData }>("recommendations");
+export const fetchAdminAnalytics = () => testsApi<{ analytics: AdminAnalytics }>("admin-analytics");
+export const createPrintableReport = (id: string) =>
+  testsApi<{ analysis: ResultAnalysis }>("report-create", { id });
 
 /** Raw upload: the body is the recorded audio blob, not JSON. */
 export async function uploadResponseAudio(
@@ -247,9 +270,11 @@ export async function uploadResponseAudio(
     headers,
     body: blob,
   });
-  const payload = (await response.json().catch(() => null)) as
-    | { audioKey: string; savedAt: string; error?: string }
-    | null;
+  const payload = (await response.json().catch(() => null)) as {
+    audioKey: string;
+    savedAt: string;
+    error?: string;
+  } | null;
   if (!response.ok) throw new ApiError(response.status, payload?.error ?? "Upload failed.");
   return payload as { audioKey: string; savedAt: string };
 }
