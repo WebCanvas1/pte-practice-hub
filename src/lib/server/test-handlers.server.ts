@@ -50,6 +50,7 @@ import {
   persistScoreResult,
 } from "./scoring/scoring-store.server";
 import type { AttemptScoreResult } from "./scoring/types";
+import { evaluateWritingQuestions } from "./ai/writing-evaluator.server";
 
 /* ------------------------------ runner schemas ----------------------------- */
 
@@ -170,7 +171,8 @@ async function scoreStoredAttempt(
     }]),
   );
   await ctx.tests.setAttemptStatus(attempt.id, "scoring");
-  const result = scoreAttempt(attempt.id, questions, answers);
+  let result = scoreAttempt(attempt.id, questions, answers);
+  result = await evaluateWritingQuestions(ctx.env, attempt.userId, result, questions);
   await persistScoreResult(ctx.env.DB, result);
   await ctx.tests.setAttemptStatus(
     attempt.id,
@@ -371,6 +373,20 @@ const handlers: Record<
         metadata: { attemptId: attempt.id },
       });
       return json({ result });
+    },
+  },
+
+  "ai-evaluations": {
+    method: "GET",
+    role: "admin",
+    handler: async (_request, ctx) => {
+      if (!ctx.env.DB) return json({ jobs: [], configured: Boolean(ctx.env.AI) });
+      const rows = await ctx.env.DB.prepare(
+        `SELECT id, attempt_id, attempt_question_id, module_key, type_key, status, provider, model,
+                attempt_count, error_message, created_at, completed_at
+         FROM ai_evaluation_jobs ORDER BY created_at DESC LIMIT 100`,
+      ).all<Record<string, unknown>>();
+      return json({ jobs: rows.results, configured: Boolean(ctx.env.AI) });
     },
   },
 

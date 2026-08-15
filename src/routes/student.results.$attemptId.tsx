@@ -50,21 +50,20 @@ function AttemptResultsPage() {
           <Clock3 className="size-4" />
           <AlertTitle>AI evaluation pending</AlertTitle>
           <AlertDescription>
-            Your objective questions have been scored. Writing and Speaking evaluation is being
-            processed.
+            Scored sections are ready. Any remaining AI-evaluated questions are still pending.
           </AlertDescription>
         </Alert>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Overall objective score</CardTitle>
+          <CardTitle>Overall practice score</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
           <p className="text-4xl font-semibold">{result.overall.percentage}%</p>
           <Progress value={result.overall.percentage} />
           <p className="text-sm text-muted-foreground">
-            {result.overall.earned} of {result.overall.maximum} deterministic points
+            {result.overall.earned} of {result.overall.maximum} currently scored points
           </p>
         </CardContent>
       </Card>
@@ -96,23 +95,49 @@ function AttemptResultsPage() {
         </CardHeader>
         <CardContent className="grid gap-2">
           {result.questions.map((question, index) => (
-            <div
-              key={question.attemptQuestionId}
-              className="flex items-center gap-3 rounded-lg border p-3"
-            >
-              {question.outcome === "pending_ai" ? (
-                <Clock3 className="size-4 text-amber-600" />
-              ) : (
-                <CheckCircle2 className="size-4 text-primary" />
+            <div key={question.attemptQuestionId} className="grid gap-3 rounded-lg border p-3">
+              <div className="flex items-center gap-3">
+                {question.outcome === "pending_ai" ? (
+                  <Clock3 className="size-4 text-amber-600" />
+                ) : (
+                  <CheckCircle2 className="size-4 text-primary" />
+                )}
+                <span className="flex-1">
+                  Question {index + 1} · {question.typeKey.replaceAll("_", " ")}
+                </span>
+                <Badge variant="secondary">
+                  {question.outcome === "pending_ai"
+                    ? "Pending"
+                    : `${question.earned} / ${question.maximum}`}
+                </Badge>
+              </div>
+              {question.breakdown?.summary && (
+                <div className="grid gap-3 border-t pt-3 text-sm">
+                  <p>{question.breakdown.summary}</p>
+                  {question.breakdown.criteria?.length ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {question.breakdown.criteria.map((criterion) => (
+                        <div key={criterion.name} className="rounded-md bg-muted p-2">
+                          <p className="font-medium capitalize">
+                            {criterion.name.replaceAll("_", " ")} · {criterion.score}/5
+                          </p>
+                          <p className="text-muted-foreground">{criterion.feedback}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {question.breakdown.improvements?.length ? (
+                    <div>
+                      <p className="font-medium">Next improvements</p>
+                      <ul className="list-disc pl-5 text-muted-foreground">
+                        {question.breakdown.improvements.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
               )}
-              <span className="flex-1">
-                Question {index + 1} · {question.typeKey.replaceAll("_", " ")}
-              </span>
-              <Badge variant="secondary">
-                {question.outcome === "pending_ai"
-                  ? "Pending"
-                  : `${question.earned} / ${question.maximum}`}
-              </Badge>
             </div>
           ))}
         </CardContent>

@@ -16,6 +16,10 @@ binding = "ASSETS"
 [vars]
 APP_URL = "https://pte-portal.example.com"
 SUPPORT_EMAIL = "support@scorepath.example"
+AI_WRITING_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+
+[ai]
+binding = "AI"
 
 # Relational data: users, profiles, sessions, tokens, audit logs, settings
 [[d1_databases]]
