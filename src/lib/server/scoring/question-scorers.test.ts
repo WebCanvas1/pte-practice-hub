@@ -43,6 +43,15 @@ const base = (type: string, patch: Partial<QuestionRecord> = {}): QuestionRecord
 const answer = () => emptyAnswer();
 
 describe("deterministic question scoring", () => {
+  it("uses the configured maximum for AI-scored questions", () => {
+    const result = scoreQuestion(
+      base("read_aloud", { scoringConfig: { maxScore: 15 }, scoreWeight: 1 }),
+      { text: "", data: emptyAnswer(), audioKey: "responses/a/q.webm" },
+    );
+    assert.equal(result.status, "pending_ai");
+    assert.equal(result.maximum, 15);
+  });
+
   it("scores binary answers and unanswered responses", () => {
     const q = base("reading_mcq_single", {
       options: [

@@ -30,7 +30,7 @@ export interface QuestionScore {
   maximum: number;
   percentage: number | null;
   outcome: "correct" | "partial" | "incorrect" | "pending_ai";
-  studentResponse: { text: string; data: AnswerData };
+  studentResponse: { text: string; data: AnswerData; audioKey?: string | null };
   correctAnswer: unknown;
   breakdown: Record<string, unknown>;
 }

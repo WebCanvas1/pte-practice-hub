@@ -41,6 +41,8 @@ export interface WorkerEnv {
   MEDIA: R2Bucket | undefined;
   AI: AiBinding | undefined;
   AI_WRITING_MODEL: string | undefined;
+  AI_SPEAKING_MODEL: string | undefined;
+  AI_TRANSCRIPTION_MODEL: string | undefined;
   SESSION_SECRET: string | undefined;
   ADMIN_SETUP_SECRET: string | undefined;
   APP_URL: string | undefined;
@@ -75,6 +77,8 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
     MEDIA: bindings["MEDIA"] as R2Bucket | undefined,
     AI: bindings["AI"] as AiBinding | undefined,
     AI_WRITING_MODEL: fromProcess("AI_WRITING_MODEL"),
+    AI_SPEAKING_MODEL: fromProcess("AI_SPEAKING_MODEL"),
+    AI_TRANSCRIPTION_MODEL: fromProcess("AI_TRANSCRIPTION_MODEL"),
     SESSION_SECRET: fromProcess("SESSION_SECRET"),
     ADMIN_SETUP_SECRET: fromProcess("ADMIN_SETUP_SECRET"),
     APP_URL: fromProcess("APP_URL"),

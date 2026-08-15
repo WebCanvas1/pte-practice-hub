@@ -114,6 +114,12 @@ function AttemptResultsPage() {
               {question.breakdown?.summary && (
                 <div className="grid gap-3 border-t pt-3 text-sm">
                   <p>{question.breakdown.summary}</p>
+                  {question.breakdown.transcript && (
+                    <div className="rounded-md border p-2">
+                      <p className="font-medium">Speech transcript</p>
+                      <p className="text-muted-foreground">{question.breakdown.transcript}</p>
+                    </div>
+                  )}
                   {question.breakdown.criteria?.length ? (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {question.breakdown.criteria.map((criterion) => (
@@ -136,6 +142,11 @@ function AttemptResultsPage() {
                       </ul>
                     </div>
                   ) : null}
+                  {question.breakdown.acousticEstimateNotice && (
+                    <p className="text-xs text-muted-foreground">
+                      {question.breakdown.acousticEstimateNotice}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

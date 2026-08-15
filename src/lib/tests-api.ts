@@ -32,6 +32,8 @@ export interface AttemptResult {
       improvements?: string[];
       confidence?: number;
       criteria?: Array<{ name: string; score: number; feedback: string }>;
+      transcript?: string;
+      acousticEstimateNotice?: string;
     };
   }>;
   scoredAt: string;

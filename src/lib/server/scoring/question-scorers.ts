@@ -59,11 +59,18 @@ export interface RawScore {
 export function scoreQuestion(question: QuestionRecord, answer: ScoringAnswer): RawScore {
   const method = methodForType(question.type);
   if (method === "ai") {
+    const configuredMaximum = question.scoringConfig["maxScore"];
+    const maximum =
+      typeof configuredMaximum === "number" &&
+      Number.isFinite(configuredMaximum) &&
+      configuredMaximum > 0
+        ? configuredMaximum
+        : Math.max(1, question.scoreWeight);
     return {
       method,
       status: "pending_ai",
       earned: 0,
-      maximum: 0,
+      maximum,
       correctAnswer: null,
       breakdown: {},
     };

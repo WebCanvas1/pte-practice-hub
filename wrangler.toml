@@ -17,6 +17,8 @@ binding = "ASSETS"
 APP_URL = "https://pte-portal.example.com"
 SUPPORT_EMAIL = "support@scorepath.example"
 AI_WRITING_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+AI_SPEAKING_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+AI_TRANSCRIPTION_MODEL = "@cf/openai/whisper-large-v3-turbo"
 
 [ai]
 binding = "AI"
