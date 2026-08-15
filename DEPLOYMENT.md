@@ -47,24 +47,48 @@ The route refuses to run once an admin exists, and only works when
 
 ## Required secrets (`wrangler secret put <NAME>`)
 
-| Secret | Purpose |
-| --- | --- |
-| `SESSION_SECRET` | reserved for signed/rotated session material |
-| `ADMIN_SETUP_SECRET` | one-time admin bootstrap route |
-| `CLOUDFLARE_ACCOUNT_ID` | CI / API tooling only |
+| Secret                   | Purpose                                               |
+| ------------------------ | ----------------------------------------------------- |
+| `SESSION_SECRET`         | reserved for signed/rotated session material          |
+| `ADMIN_SETUP_SECRET`     | one-time admin bootstrap route                        |
+| `STRIPE_SECRET_KEY`      | Stripe Checkout API key (`sk_test_...` for test mode) |
+| `STRIPE_WEBHOOK_SECRET`  | Stripe endpoint signing secret (`whsec_...`)          |
+| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (`pk_test_...` for test mode)  |
+| `CLOUDFLARE_ACCOUNT_ID`  | CI / API tooling only                                 |
 
 ## Vars
 
 `APP_URL`, `SUPPORT_EMAIL` (set in `wrangler.toml` `[vars]`).
 
+## Stripe Checkout and webhooks
+
+Use Stripe test-mode keys until launch. In Stripe Workbench, create a webhook
+endpoint at `https://<app>/api/public/stripe/webhook` and subscribe to
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`, and
+`checkout.session.async_payment_failed`. Copy its signing secret into
+`STRIPE_WEBHOOK_SECRET`; each environment/endpoint has a different secret.
+
+For local testing, run `stripe listen --forward-to localhost:8080/api/public/stripe/webhook`
+and use the temporary `whsec_...` value printed by the Stripe CLI. A successful
+return page never unlocks a test: only the verified webhook (or a server-validated
+zero-total checkout) creates an entitlement. Re-send the same event from Stripe
+Workbench to verify duplicate delivery remains idempotent, test a successful
+Checkout with Stripe's test card `4242 4242 4242 4242`, cancel a second Checkout,
+and confirm neither the return URL nor a cancelled session can start a test.
+
+Apply `migrations/0011_stripe_payments.sql` before enabling Checkout. Product
+and active-price rows in D1 are authoritative; the browser never submits an
+amount. Future price changes should insert a new active `prices` row and retire
+the old row, preserving historical receipts.
+
 ## Bindings
 
-| Binding | Type | Use |
-| --- | --- | --- |
-| `DB` | D1 | users, user_profiles, user_sessions, password_reset_tokens, email_verification_tokens, roles, user_roles, audit_logs, platform_settings |
-| `SETTINGS_KV` | KV | platform settings / cached config |
-| `SESSIONS_KV` | KV | login rate-limit counters, session lookups |
-| `MEDIA` | R2 | future audio recordings and media |
+| Binding       | Type | Use                                                                                                                                     |
+| ------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `DB`          | D1   | users, user_profiles, user_sessions, password_reset_tokens, email_verification_tokens, roles, user_roles, audit_logs, platform_settings |
+| `SETTINGS_KV` | KV   | platform settings / cached config                                                                                                       |
+| `SESSIONS_KV` | KV   | login rate-limit counters, session lookups                                                                                              |
+| `MEDIA`       | R2   | future audio recordings and media                                                                                                       |
 
 ## API surface
 

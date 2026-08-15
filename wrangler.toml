@@ -48,4 +48,7 @@ bucket_name = "pte-portal-media"
 # Secrets (set via `wrangler secret put`):
 # SESSION_SECRET
 # ADMIN_SETUP_SECRET
+# STRIPE_SECRET_KEY
+# STRIPE_WEBHOOK_SECRET
+# STRIPE_PUBLISHABLE_KEY
 # CLOUDFLARE_ACCOUNT_ID (only needed by CI / API tooling)

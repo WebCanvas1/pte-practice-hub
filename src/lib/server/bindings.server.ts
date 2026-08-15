@@ -48,6 +48,10 @@ export interface WorkerEnv {
   APP_URL: string | undefined;
   SUPPORT_EMAIL: string | undefined;
   CLOUDFLARE_ACCOUNT_ID: string | undefined;
+  STRIPE_SECRET_KEY: string | undefined;
+  STRIPE_WEBHOOK_SECRET: string | undefined;
+  STRIPE_PUBLISHABLE_KEY: string | undefined;
+  EMAIL_API_KEY: string | undefined;
 }
 
 let cached: WorkerEnv | undefined;
@@ -84,6 +88,10 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
     APP_URL: fromProcess("APP_URL"),
     SUPPORT_EMAIL: fromProcess("SUPPORT_EMAIL"),
     CLOUDFLARE_ACCOUNT_ID: fromProcess("CLOUDFLARE_ACCOUNT_ID"),
+    STRIPE_SECRET_KEY: fromProcess("STRIPE_SECRET_KEY"),
+    STRIPE_WEBHOOK_SECRET: fromProcess("STRIPE_WEBHOOK_SECRET"),
+    STRIPE_PUBLISHABLE_KEY: fromProcess("STRIPE_PUBLISHABLE_KEY"),
+    EMAIL_API_KEY: fromProcess("EMAIL_API_KEY"),
   };
 
   cached = resolved;
