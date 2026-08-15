@@ -100,6 +100,23 @@ function Page() {
                       Retry fulfilment
                     </Button>
                   ) : null}
+                  {p.status === "succeeded" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        const reason = window.prompt("Refund note (records Stripe status):") ?? "";
+                        await paymentsApi("refund-status", {
+                          id: p.id,
+                          status: "succeeded",
+                          reason,
+                        });
+                        await load();
+                      }}
+                    >
+                      Record refund
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             ))}

@@ -430,16 +430,31 @@ const handlers: Record<
       const templates = await ctx.tests.listTemplates({ activeOnly: true });
       const entitlements = await ctx.tests.listEntitlements(userId);
       const attempts = await ctx.tests.listAttempts(userId);
+      const activePrices = new Map<string, { amount: number; currency: string }>();
+      if (ctx.env.DB) {
+        const rows = await ctx.env.DB.prepare(
+          `SELECT p.code,pr.unit_amount,pr.currency FROM products p JOIN prices pr ON pr.product_id=p.id WHERE p.is_active=1 AND pr.is_active=1 AND pr.starts_at<=datetime('now') AND (pr.ends_at IS NULL OR pr.ends_at>datetime('now'))`,
+        ).all<{ code: string; unit_amount: number; currency: string }>();
+        for (const row of rows.results)
+          activePrices.set(row.code, { amount: row.unit_amount / 100, currency: row.currency });
+      }
       return json({
-        templates: templates.map((template) => ({
-          ...template,
-          estimatedMinutes: estimatedMinutes(template.rules),
-          types: template.rules.map((rule) => ({
-            typeKey: rule.typeKey,
-            typeName: questionTypeMap[rule.typeKey]?.name ?? rule.typeKey,
-            questionCount: rule.questionCount,
-          })),
-        })),
+        templates: templates.map((template) => {
+          const code = template.testType === "mock" ? "complete-mock" : `${template.module}-test`;
+          const authoritative = activePrices.get(code);
+          return {
+            ...template,
+            ...(authoritative
+              ? { price: authoritative.amount, currency: authoritative.currency }
+              : {}),
+            estimatedMinutes: estimatedMinutes(template.rules),
+            types: template.rules.map((rule) => ({
+              typeKey: rule.typeKey,
+              typeName: questionTypeMap[rule.typeKey]?.name ?? rule.typeKey,
+              questionCount: rule.questionCount,
+            })),
+          };
+        }),
         entitlements,
         attempts,
       });
