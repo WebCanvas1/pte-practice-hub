@@ -15,6 +15,32 @@ const adminUpdateSchema = z.object({
   status: z.enum(["pending", "succeeded", "failed", "cancelled"]),
   reason: z.string().max(500).optional(),
 });
+const priceUpdateSchema = z.object({
+  productId: z.string().min(3),
+  unitAmount: z.number().int().min(0).max(1_000_000),
+});
+const couponSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .min(2)
+      .max(40)
+      .transform((value) => value.toUpperCase()),
+    discountType: z.enum(["fixed", "percentage"]),
+    amountOff: z.number().int().min(0).optional(),
+    percentOff: z.number().positive().max(100).optional(),
+    expiresAt: z.string().datetime().nullable().optional(),
+    usageLimit: z.number().int().positive().nullable().optional(),
+    productIds: z.array(z.string().min(3)).max(20).default([]),
+  })
+  .superRefine((value, ctx) => {
+    if (value.discountType === "fixed" && value.amountOff === undefined)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["amountOff"], message: "Required." });
+    if (value.discountType === "percentage" && value.percentOff === undefined)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["percentOff"], message: "Required." });
+  });
+const couponToggleSchema = z.object({ id: z.string().min(3), active: z.boolean() });
 
 interface StripeSession {
   id: string;
@@ -54,7 +80,30 @@ async function stripeRequest<T>(
   return value;
 }
 
+async function sendConfirmation(
+  env: WorkerEnv,
+  email: string,
+  productName: string,
+  amount: number,
+  currency: string,
+  purchaseId: string,
+): Promise<void> {
+  if (!env.EMAIL_API_KEY || !env.SUPPORT_EMAIL || env.SUPPORT_EMAIL.endsWith(".example")) return;
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.EMAIL_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: env.SUPPORT_EMAIL,
+      to: [email],
+      subject: `Payment confirmed — ${productName}`,
+      html: `<h1>Payment confirmed</h1><p>Your purchase of ${productName} is ready.</p><p>Amount: ${currency} ${(amount / 100).toFixed(2)}</p><p>Receipt: ${appUrl(env, new Request(env.APP_URL ?? "http://localhost"))}/student/receipt/${purchaseId}</p>`,
+    }),
+  });
+  if (!response.ok) throw new Error(`Confirmation email failed with HTTP ${response.status}.`);
+}
+
 async function fulfill(
+  env: WorkerEnv,
   DB: D1Database,
   checkoutId: string,
   paymentIntent: string | null,
@@ -138,6 +187,18 @@ async function fulfill(
     await DB.prepare(`UPDATE coupons SET times_used=times_used+1,updated_at=? WHERE id=?`)
       .bind(now, session["coupon_id"])
       .run();
+  const customer = await DB.prepare(`SELECT email FROM users WHERE id=?`)
+    .bind(session["user_id"])
+    .first<{ email: string }>();
+  if (customer)
+    await sendConfirmation(
+      env,
+      customer.email,
+      String(session["product_name"]),
+      Number(session["total"]),
+      String(session["currency"]),
+      purchaseId,
+    ).catch((error) => console.error("[payments] confirmation email", error));
   return purchaseId;
 }
 
@@ -201,7 +262,7 @@ async function createCheckout(request: Request, env: WorkerEnv, DB: D1Database, 
     )
     .run();
   if (total === 0) {
-    const purchaseId = await fulfill(DB, checkoutId, null);
+    const purchaseId = await fulfill(env, DB, checkoutId, null);
     return json({
       free: true,
       purchaseId,
@@ -281,7 +342,7 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
         session.payment_status === "paid" &&
         checkoutId
       )
-        await fulfill(ctx.env.DB, checkoutId, session.payment_intent);
+        await fulfill(ctx.env, ctx.env.DB, checkoutId, session.payment_intent);
       if (event.type === "checkout.session.async_payment_failed" && checkoutId)
         await ctx.env.DB.prepare(
           `UPDATE checkout_sessions SET status='failed',failure_message='Delayed payment failed',updated_at=? WHERE id=?`,
@@ -351,6 +412,74 @@ export async function handlePaymentRequest(request: Request, action: string): Pr
       ]);
       return json({ payments: payments.results, events: events.results });
     }
+    if (action === "catalog-admin" && request.method === "GET") {
+      await requireRole(ctx, request, "admin");
+      const [products, coupons, refunds] = await Promise.all([
+        DB.prepare(
+          `SELECT p.*,pr.id price_id,pr.unit_amount,pr.currency FROM products p LEFT JOIN prices pr ON pr.product_id=p.id AND pr.is_active=1 WHERE p.product_type='test' ORDER BY p.name`,
+        ).all(),
+        DB.prepare(`SELECT * FROM coupons ORDER BY created_at DESC`).all(),
+        DB.prepare(
+          `SELECT r.*,u.email,p.stripe_payment_intent_id FROM refunds r JOIN payments p ON p.id=r.payment_id JOIN users u ON u.id=p.user_id ORDER BY r.created_at DESC LIMIT 100`,
+        ).all(),
+      ]);
+      return json({
+        products: products.results,
+        coupons: coupons.results,
+        refunds: refunds.results,
+      });
+    }
+    if (action === "price-update" && request.method === "POST") {
+      await requireRole(ctx, request, "admin");
+      assertCsrf(request);
+      const input = await parseBody(request, priceUpdateSchema);
+      const product = await DB.prepare(`SELECT id FROM products WHERE id=? AND product_type='test'`)
+        .bind(input.productId)
+        .first();
+      if (!product) throw new HttpError(404, "Product not found.");
+      const now = new Date().toISOString();
+      await DB.prepare(`UPDATE prices SET is_active=0,ends_at=? WHERE product_id=? AND is_active=1`)
+        .bind(now, input.productId)
+        .run();
+      await DB.prepare(
+        `INSERT INTO prices (id,product_id,currency,unit_amount,is_active,starts_at,created_at) VALUES (?,?,'AUD',?,1,?,?)`,
+      )
+        .bind(newId("price"), input.productId, input.unitAmount, now, now)
+        .run();
+      return json({ ok: true });
+    }
+    if (action === "coupon-create" && request.method === "POST") {
+      await requireRole(ctx, request, "admin");
+      assertCsrf(request);
+      const input = await parseBody(request, couponSchema);
+      const now = new Date().toISOString();
+      await DB.prepare(
+        `INSERT INTO coupons (id,code,discount_type,amount_off,percent_off,currency,expires_at,usage_limit,is_active,applicable_products_json,created_at,updated_at) VALUES (?,?,?,?,?,'AUD',?,?,1,?,?,?)`,
+      )
+        .bind(
+          newId("cpn"),
+          input.code,
+          input.discountType,
+          input.amountOff ?? null,
+          input.percentOff ?? null,
+          input.expiresAt ?? null,
+          input.usageLimit ?? null,
+          JSON.stringify(input.productIds),
+          now,
+          now,
+        )
+        .run();
+      return json({ ok: true });
+    }
+    if (action === "coupon-toggle" && request.method === "POST") {
+      await requireRole(ctx, request, "admin");
+      assertCsrf(request);
+      const input = await parseBody(request, couponToggleSchema);
+      await DB.prepare(`UPDATE coupons SET is_active=?,updated_at=? WHERE id=?`)
+        .bind(input.active ? 1 : 0, new Date().toISOString(), input.id)
+        .run();
+      return json({ ok: true });
+    }
     if (action === "cancel-entitlement" && request.method === "POST") {
       const admin = await requireRole(ctx, request, "admin");
       void admin;
@@ -395,13 +524,34 @@ export async function handlePaymentRequest(request: Request, action: string): Pr
           now,
         )
         .run();
+      if (input.status === "succeeded") {
+        await DB.prepare(`UPDATE payments SET status='refunded',updated_at=? WHERE id=?`)
+          .bind(now, input.id)
+          .run();
+        await DB.prepare(`UPDATE purchases SET status='refunded' WHERE payment_id=?`)
+          .bind(input.id)
+          .run();
+        const entitlement = await DB.prepare(
+          `SELECT e.id,e.test_entitlement_id,te.attempt_id FROM entitlements e JOIN purchases p ON p.id=e.purchase_id LEFT JOIN test_entitlements te ON te.id=e.test_entitlement_id WHERE p.payment_id=?`,
+        )
+          .bind(input.id)
+          .first<Record<string, unknown>>();
+        if (entitlement && !entitlement["attempt_id"]) {
+          await DB.prepare(`UPDATE entitlements SET status='cancelled',cancelled_at=? WHERE id=?`)
+            .bind(now, entitlement["id"])
+            .run();
+          await DB.prepare(`UPDATE test_entitlements SET status='refunded' WHERE id=?`)
+            .bind(entitlement["test_entitlement_id"])
+            .run();
+        }
+      }
       return json({ ok: true });
     }
     if (action === "retry-fulfilment" && request.method === "POST") {
       await requireRole(ctx, request, "admin");
       assertCsrf(request);
       const { id } = await parseBody(request, idSchema);
-      const purchaseId = await fulfill(DB, id, null);
+      const purchaseId = await fulfill(ctx.env, DB, id, null);
       return json({ purchaseId });
     }
     return json({ error: "Unknown payment endpoint." }, { status: 404 });

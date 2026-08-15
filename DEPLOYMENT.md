@@ -54,11 +54,16 @@ The route refuses to run once an admin exists, and only works when
 | `STRIPE_SECRET_KEY`      | Stripe Checkout API key (`sk_test_...` for test mode) |
 | `STRIPE_WEBHOOK_SECRET`  | Stripe endpoint signing secret (`whsec_...`)          |
 | `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (`pk_test_...` for test mode)  |
+| `EMAIL_API_KEY`          | Optional Resend API key for payment confirmations     |
 | `CLOUDFLARE_ACCOUNT_ID`  | CI / API tooling only                                 |
 
 ## Vars
 
 `APP_URL`, `SUPPORT_EMAIL` (set in `wrangler.toml` `[vars]`).
+
+When `EMAIL_API_KEY` is configured, `SUPPORT_EMAIL` must be a sender verified in
+Resend. Payment fulfilment remains successful if email delivery fails; the
+failure is written to Worker logs for operational follow-up.
 
 ## Stripe Checkout and webhooks
 
