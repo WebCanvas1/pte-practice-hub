@@ -12,6 +12,24 @@ import type {
 import type { DifficultyKey, ModuleKey } from "@/config/questions";
 import type { AnswerData, RunnerSession } from "@/config/test-runner";
 
+export interface AttemptResult {
+  attemptId: string;
+  status: "completed" | "pending_ai";
+  overall: { earned: number; maximum: number; percentage: number };
+  modules: Record<string, { earned: number; maximum: number; percentage: number; status?: "pending_ai" }>;
+  questions: Array<{
+    attemptQuestionId: string;
+    typeKey: string;
+    module: ModuleKey;
+    answered: boolean;
+    earned: number;
+    maximum: number;
+    percentage: number | null;
+    outcome: "correct" | "partial" | "incorrect" | "pending_ai";
+  }>;
+  scoredAt: string;
+}
+
 const TESTS_API_BASE = "/api/public/tests";
 
 function csrfTokenFromCookie(): string | null {
@@ -182,7 +200,10 @@ export const fetchAttemptReview = (attemptId: string) =>
   }>("attempt-review", undefined, { id: attemptId });
 
 export const submitTest = (attemptId: string, reason: "manual" | "time_expired" = "manual") =>
-  testsApi<{ attempt: TestAttemptRecord }>("submit-test", { attemptId, reason });
+  testsApi<{ attempt: TestAttemptRecord; result: AttemptResult }>("submit-test", { attemptId, reason });
+
+export const fetchAttemptResult = (attemptId: string) =>
+  testsApi<{ result: AttemptResult }>("attempt-result", undefined, { id: attemptId });
 
 /** Raw upload: the body is the recorded audio blob, not JSON. */
 export async function uploadResponseAudio(

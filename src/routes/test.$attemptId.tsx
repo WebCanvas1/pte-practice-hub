@@ -275,6 +275,7 @@ function Runner({ session }: { session: RunnerSession }) {
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [submissionMessage, setSubmissionMessage] = React.useState("Submitting your test…");
   const [audioDone, setAudioDone] = React.useState<Record<string, boolean>>({});
   const [fullscreen, setFullscreen] = React.useState(true);
 
@@ -336,12 +337,14 @@ function Runner({ session }: { session: RunnerSession }) {
   const doSubmit = React.useCallback(
     async (reason: "manual" | "time_expired") => {
       setSubmitting(true);
+      setSubmissionMessage("Submitting your test…");
       try {
         await autosave.flush();
+        setSubmissionMessage("Calculating your results…");
         await submitTest(attempt.id, reason);
         sessionStorage.removeItem(draftStorageKey(attempt.id));
         toast.success(reason === "manual" ? "Test submitted." : "Time expired — test submitted.");
-        await navigate({ to: "/student/my-tests" });
+        await navigate({ to: "/student/results/$attemptId", params: { attemptId: attempt.id } });
       } catch {
         toast.error("We could not submit the test. Check your connection and try again.");
       } finally {
@@ -542,6 +545,15 @@ function Runner({ session }: { session: RunnerSession }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {submitting && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm" role="status" aria-live="polite">
+          <div className="rounded-xl border bg-card p-6 text-center shadow-lg">
+            <Loader2 className="mx-auto mb-3 size-6 animate-spin text-primary" aria-hidden />
+            <p className="font-medium">{submissionMessage}</p>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
