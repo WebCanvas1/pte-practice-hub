@@ -457,30 +457,14 @@ const handlers: Record<
     },
   },
 
-  /**
-   * Grants an entitlement. Payments are not implemented yet, so this records a
-   * zero-price entitlement instead of charging; the generation flow is
-   * unchanged once a payment provider is connected.
-   */
+  /** Retained for old clients, but intentionally cannot bypass checkout. */
   entitle: {
     method: "POST",
     role: "user",
     handler: async (request, ctx, userId) => {
       assertCsrf(request);
-      const data = await parseBody(request, idSchema);
-      const template = await requireTemplate(ctx, data.id);
-      if (!template.isActive || !template.purchasable)
-        throw new HttpError(400, "This test is not available right now.");
-      const existing = await ctx.tests.findActiveEntitlement(userId, template.id);
-      if (existing) return json({ entitlement: existing, reused: true });
-      const entitlement = await ctx.tests.grantEntitlement(
-        userId,
-        template.id,
-        "manual",
-        0,
-        template.currency,
-      );
-      return json({ entitlement, reused: false });
+      void userId;
+      throw new HttpError(410, "Use secure checkout to purchase this test.");
     },
   },
 

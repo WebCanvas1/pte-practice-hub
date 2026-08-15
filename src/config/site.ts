@@ -76,7 +76,8 @@ export const testModules: {
   {
     key: "speaking",
     name: "Speaking",
-    blurb: "Read aloud, repeat sentence, describe image and retell lecture with pronunciation and fluency scoring.",
+    blurb:
+      "Read aloud, repeat sentence, describe image and retell lecture with pronunciation and fluency scoring.",
     taskCount: 5,
     minutes: 30,
     icon: "mic",
@@ -84,7 +85,8 @@ export const testModules: {
   {
     key: "reading",
     name: "Reading",
-    blurb: "Multiple choice, re-order paragraphs and fill in the blanks drawn from exam-style academic texts.",
+    blurb:
+      "Multiple choice, re-order paragraphs and fill in the blanks drawn from exam-style academic texts.",
     taskCount: 5,
     minutes: 32,
     icon: "book-open",
@@ -92,7 +94,8 @@ export const testModules: {
   {
     key: "writing",
     name: "Writing",
-    blurb: "Summarise written text and essay tasks graded on content, form, grammar and vocabulary.",
+    blurb:
+      "Summarise written text and essay tasks graded on content, form, grammar and vocabulary.",
     taskCount: 2,
     minutes: 40,
     icon: "pen-line",
@@ -100,7 +103,8 @@ export const testModules: {
   {
     key: "listening",
     name: "Listening",
-    blurb: "Summarise spoken text, dictation and highlight incorrect words with native-speed audio.",
+    blurb:
+      "Summarise spoken text, dictation and highlight incorrect words with native-speed audio.",
     taskCount: 8,
     minutes: 35,
     icon: "headphones",
@@ -115,7 +119,7 @@ export const difficultyLevels: { key: DifficultyKey; name: string; note: string 
 
 /** Feature flags for functionality that is intentionally not built yet. */
 export const featureFlags = {
-  payments: false,
+  payments: true,
   aiEvaluation: false,
-  coupons: false,
+  coupons: true,
 } as const;

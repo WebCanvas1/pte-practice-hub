@@ -32,7 +32,6 @@ import {
 } from "@/config/tests";
 import { ApiError } from "@/lib/api";
 import {
-  entitleTest,
   fetchCatalogue,
   startTest,
   type CatalogueResponse,
@@ -95,17 +94,7 @@ function BrowseTestsPage() {
 
   async function handleGet(template: CatalogueTemplate) {
     setBusyId(template.id);
-    try {
-      const result = await entitleTest(template.id);
-      toast.success(
-        result.reused ? "You already have this test ready to start." : "Test added to My Tests.",
-      );
-      await load();
-    } catch (caught) {
-      toast.error(caught instanceof ApiError ? caught.message : "Unable to add this test.");
-    } finally {
-      setBusyId(null);
-    }
+    window.location.assign(`/student/checkout?template=${encodeURIComponent(template.id)}`);
   }
 
   async function handleStart(template: CatalogueTemplate) {
@@ -147,7 +136,10 @@ function BrowseTestsPage() {
           <label className="text-xs font-medium text-muted-foreground" htmlFor="filter-type">
             Test type
           </label>
-          <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as TestType | "all")}>
+          <Select
+            value={typeFilter}
+            onValueChange={(value) => setTypeFilter(value as TestType | "all")}
+          >
             <SelectTrigger id="filter-type">
               <SelectValue placeholder="All test types" />
             </SelectTrigger>
@@ -279,14 +271,22 @@ function BrowseTestsPage() {
                 <CardFooter className="flex items-center justify-between gap-3 border-t border-border pt-4">
                   <span className="text-lg font-semibold">{formatPrice(template.price)}</span>
                   {entitlement ? (
-                    <Button variant="hero" disabled={busy} onClick={() => void handleStart(template)}>
+                    <Button
+                      variant="hero"
+                      disabled={busy}
+                      onClick={() => void handleStart(template)}
+                    >
                       {busy ? (
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                       ) : null}
                       Start test
                     </Button>
                   ) : (
-                    <Button variant="default" disabled={busy} onClick={() => void handleGet(template)}>
+                    <Button
+                      variant="default"
+                      disabled={busy}
+                      onClick={() => void handleGet(template)}
+                    >
                       {busy ? (
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                       ) : (

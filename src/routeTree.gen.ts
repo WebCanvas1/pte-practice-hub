@@ -41,16 +41,23 @@ import { Route as StudentIndexRouteImport } from './routes/student.index'
 import { Route as StudentAccountSettingsRouteImport } from './routes/student.account-settings'
 import { Route as StudentAiRecommendationsRouteImport } from './routes/student.ai-recommendations'
 import { Route as StudentBrowseTestsRouteImport } from './routes/student.browse-tests'
+import { Route as StudentCheckoutRouteImport } from './routes/student.checkout'
 import { Route as StudentMyTestsRouteImport } from './routes/student.my-tests'
+import { Route as StudentPaymentCancelledRouteImport } from './routes/student.payment-cancelled'
+import { Route as StudentPaymentFailedRouteImport } from './routes/student.payment-failed'
+import { Route as StudentPaymentSuccessRouteImport } from './routes/student.payment-success'
 import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as StudentProgressRouteImport } from './routes/student.progress'
 import { Route as StudentPurchasesRouteImport } from './routes/student.purchases'
 import { Route as StudentTestHistoryRouteImport } from './routes/student.test-history'
 import { Route as TestAttemptIdRouteImport } from './routes/test.$attemptId'
+import { Route as StudentReceiptPurchaseIdRouteImport } from './routes/student.receipt.$purchaseId'
 import { Route as StudentResultsAttemptIdRouteImport } from './routes/student.results.$attemptId'
 import { Route as StudentReviewAttemptIdRouteImport } from './routes/student.review.$attemptId'
 import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
+import { Route as ApiPublicPaymentsActionRouteImport } from './routes/api/public/payments/$action'
 import { Route as ApiPublicQuestionsActionRouteImport } from './routes/api/public/questions/$action'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicTestsActionRouteImport } from './routes/api/public/tests/$action'
 
 const IndexRoute = IndexRouteImport.update({
@@ -214,9 +221,29 @@ const StudentBrowseTestsRoute = StudentBrowseTestsRouteImport.update({
   path: '/browse-tests',
   getParentRoute: () => StudentRoute,
 } as any)
+const StudentCheckoutRoute = StudentCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => StudentRoute,
+} as any)
 const StudentMyTestsRoute = StudentMyTestsRouteImport.update({
   id: '/my-tests',
   path: '/my-tests',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPaymentCancelledRoute = StudentPaymentCancelledRouteImport.update({
+  id: '/payment-cancelled',
+  path: '/payment-cancelled',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPaymentFailedRoute = StudentPaymentFailedRouteImport.update({
+  id: '/payment-failed',
+  path: '/payment-failed',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPaymentSuccessRoute = StudentPaymentSuccessRouteImport.update({
+  id: '/payment-success',
+  path: '/payment-success',
   getParentRoute: () => StudentRoute,
 } as any)
 const StudentProfileRoute = StudentProfileRouteImport.update({
@@ -244,6 +271,12 @@ const TestAttemptIdRoute = TestAttemptIdRouteImport.update({
   path: '/test/$attemptId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentReceiptPurchaseIdRoute =
+  StudentReceiptPurchaseIdRouteImport.update({
+    id: '/receipt/$purchaseId',
+    path: '/receipt/$purchaseId',
+    getParentRoute: () => StudentRoute,
+  } as any)
 const StudentResultsAttemptIdRoute = StudentResultsAttemptIdRouteImport.update({
   id: '/results/$attemptId',
   path: '/results/$attemptId',
@@ -259,12 +292,22 @@ const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
   path: '/api/public/auth/$action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsActionRoute = ApiPublicPaymentsActionRouteImport.update({
+  id: '/api/public/payments/$action',
+  path: '/api/public/payments/$action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicQuestionsActionRoute =
   ApiPublicQuestionsActionRouteImport.update({
     id: '/api/public/questions/$action',
     path: '/api/public/questions/$action',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe/webhook',
+  path: '/api/public/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTestsActionRoute = ApiPublicTestsActionRouteImport.update({
   id: '/api/public/tests/$action',
   path: '/api/public/tests/$action',
@@ -302,7 +345,11 @@ export interface FileRoutesByFullPath {
   '/student/account-settings': typeof StudentAccountSettingsRoute
   '/student/ai-recommendations': typeof StudentAiRecommendationsRoute
   '/student/browse-tests': typeof StudentBrowseTestsRoute
+  '/student/checkout': typeof StudentCheckoutRoute
   '/student/my-tests': typeof StudentMyTestsRoute
+  '/student/payment-cancelled': typeof StudentPaymentCancelledRoute
+  '/student/payment-failed': typeof StudentPaymentFailedRoute
+  '/student/payment-success': typeof StudentPaymentSuccessRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
@@ -310,10 +357,13 @@ export interface FileRoutesByFullPath {
   '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/student/receipt/$purchaseId': typeof StudentReceiptPurchaseIdRoute
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
+  '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
 }
 export interface FileRoutesByTo {
@@ -345,7 +395,11 @@ export interface FileRoutesByTo {
   '/student/account-settings': typeof StudentAccountSettingsRoute
   '/student/ai-recommendations': typeof StudentAiRecommendationsRoute
   '/student/browse-tests': typeof StudentBrowseTestsRoute
+  '/student/checkout': typeof StudentCheckoutRoute
   '/student/my-tests': typeof StudentMyTestsRoute
+  '/student/payment-cancelled': typeof StudentPaymentCancelledRoute
+  '/student/payment-failed': typeof StudentPaymentFailedRoute
+  '/student/payment-success': typeof StudentPaymentSuccessRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
@@ -353,10 +407,13 @@ export interface FileRoutesByTo {
   '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin': typeof AdminIndexRoute
   '/student': typeof StudentIndexRoute
+  '/student/receipt/$purchaseId': typeof StudentReceiptPurchaseIdRoute
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
+  '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
 }
 export interface FileRoutesById {
@@ -391,7 +448,11 @@ export interface FileRoutesById {
   '/student/account-settings': typeof StudentAccountSettingsRoute
   '/student/ai-recommendations': typeof StudentAiRecommendationsRoute
   '/student/browse-tests': typeof StudentBrowseTestsRoute
+  '/student/checkout': typeof StudentCheckoutRoute
   '/student/my-tests': typeof StudentMyTestsRoute
+  '/student/payment-cancelled': typeof StudentPaymentCancelledRoute
+  '/student/payment-failed': typeof StudentPaymentFailedRoute
+  '/student/payment-success': typeof StudentPaymentSuccessRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
   '/student/purchases': typeof StudentPurchasesRoute
@@ -399,10 +460,13 @@ export interface FileRoutesById {
   '/test/$attemptId': typeof TestAttemptIdRoute
   '/admin/': typeof AdminIndexRoute
   '/student/': typeof StudentIndexRoute
+  '/student/receipt/$purchaseId': typeof StudentReceiptPurchaseIdRoute
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
+  '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/tests/$action': typeof ApiPublicTestsActionRoute
 }
 export interface FileRouteTypes {
@@ -438,7 +502,11 @@ export interface FileRouteTypes {
     | '/student/account-settings'
     | '/student/ai-recommendations'
     | '/student/browse-tests'
+    | '/student/checkout'
     | '/student/my-tests'
+    | '/student/payment-cancelled'
+    | '/student/payment-failed'
+    | '/student/payment-success'
     | '/student/profile'
     | '/student/progress'
     | '/student/purchases'
@@ -446,10 +514,13 @@ export interface FileRouteTypes {
     | '/test/$attemptId'
     | '/admin/'
     | '/student/'
+    | '/student/receipt/$purchaseId'
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
     | '/api/public/auth/$action'
+    | '/api/public/payments/$action'
     | '/api/public/questions/$action'
+    | '/api/public/stripe/webhook'
     | '/api/public/tests/$action'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -481,7 +552,11 @@ export interface FileRouteTypes {
     | '/student/account-settings'
     | '/student/ai-recommendations'
     | '/student/browse-tests'
+    | '/student/checkout'
     | '/student/my-tests'
+    | '/student/payment-cancelled'
+    | '/student/payment-failed'
+    | '/student/payment-success'
     | '/student/profile'
     | '/student/progress'
     | '/student/purchases'
@@ -489,10 +564,13 @@ export interface FileRouteTypes {
     | '/test/$attemptId'
     | '/admin'
     | '/student'
+    | '/student/receipt/$purchaseId'
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
     | '/api/public/auth/$action'
+    | '/api/public/payments/$action'
     | '/api/public/questions/$action'
+    | '/api/public/stripe/webhook'
     | '/api/public/tests/$action'
   id:
     | '__root__'
@@ -526,7 +604,11 @@ export interface FileRouteTypes {
     | '/student/account-settings'
     | '/student/ai-recommendations'
     | '/student/browse-tests'
+    | '/student/checkout'
     | '/student/my-tests'
+    | '/student/payment-cancelled'
+    | '/student/payment-failed'
+    | '/student/payment-success'
     | '/student/profile'
     | '/student/progress'
     | '/student/purchases'
@@ -534,10 +616,13 @@ export interface FileRouteTypes {
     | '/test/$attemptId'
     | '/admin/'
     | '/student/'
+    | '/student/receipt/$purchaseId'
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
     | '/api/public/auth/$action'
+    | '/api/public/payments/$action'
     | '/api/public/questions/$action'
+    | '/api/public/stripe/webhook'
     | '/api/public/tests/$action'
   fileRoutesById: FileRoutesById
 }
@@ -560,7 +645,9 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   TestAttemptIdRoute: typeof TestAttemptIdRoute
   ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
+  ApiPublicPaymentsActionRoute: typeof ApiPublicPaymentsActionRoute
   ApiPublicQuestionsActionRoute: typeof ApiPublicQuestionsActionRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicTestsActionRoute: typeof ApiPublicTestsActionRoute
 }
 
@@ -790,11 +877,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentBrowseTestsRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/student/checkout': {
+      id: '/student/checkout'
+      path: '/checkout'
+      fullPath: '/student/checkout'
+      preLoaderRoute: typeof StudentCheckoutRouteImport
+      parentRoute: typeof StudentRoute
+    }
     '/student/my-tests': {
       id: '/student/my-tests'
       path: '/my-tests'
       fullPath: '/student/my-tests'
       preLoaderRoute: typeof StudentMyTestsRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/payment-cancelled': {
+      id: '/student/payment-cancelled'
+      path: '/payment-cancelled'
+      fullPath: '/student/payment-cancelled'
+      preLoaderRoute: typeof StudentPaymentCancelledRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/payment-failed': {
+      id: '/student/payment-failed'
+      path: '/payment-failed'
+      fullPath: '/student/payment-failed'
+      preLoaderRoute: typeof StudentPaymentFailedRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/payment-success': {
+      id: '/student/payment-success'
+      path: '/payment-success'
+      fullPath: '/student/payment-success'
+      preLoaderRoute: typeof StudentPaymentSuccessRouteImport
       parentRoute: typeof StudentRoute
     }
     '/student/profile': {
@@ -832,6 +947,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestAttemptIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/receipt/$purchaseId': {
+      id: '/student/receipt/$purchaseId'
+      path: '/receipt/$purchaseId'
+      fullPath: '/student/receipt/$purchaseId'
+      preLoaderRoute: typeof StudentReceiptPurchaseIdRouteImport
+      parentRoute: typeof StudentRoute
+    }
     '/student/results/$attemptId': {
       id: '/student/results/$attemptId'
       path: '/results/$attemptId'
@@ -853,11 +975,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuthActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/$action': {
+      id: '/api/public/payments/$action'
+      path: '/api/public/payments/$action'
+      fullPath: '/api/public/payments/$action'
+      preLoaderRoute: typeof ApiPublicPaymentsActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/questions/$action': {
       id: '/api/public/questions/$action'
       path: '/api/public/questions/$action'
       fullPath: '/api/public/questions/$action'
       preLoaderRoute: typeof ApiPublicQuestionsActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe/webhook': {
+      id: '/api/public/stripe/webhook'
+      path: '/api/public/stripe/webhook'
+      fullPath: '/api/public/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/tests/$action': {
@@ -906,12 +1042,17 @@ interface StudentRouteChildren {
   StudentAccountSettingsRoute: typeof StudentAccountSettingsRoute
   StudentAiRecommendationsRoute: typeof StudentAiRecommendationsRoute
   StudentBrowseTestsRoute: typeof StudentBrowseTestsRoute
+  StudentCheckoutRoute: typeof StudentCheckoutRoute
   StudentMyTestsRoute: typeof StudentMyTestsRoute
+  StudentPaymentCancelledRoute: typeof StudentPaymentCancelledRoute
+  StudentPaymentFailedRoute: typeof StudentPaymentFailedRoute
+  StudentPaymentSuccessRoute: typeof StudentPaymentSuccessRoute
   StudentProfileRoute: typeof StudentProfileRoute
   StudentProgressRoute: typeof StudentProgressRoute
   StudentPurchasesRoute: typeof StudentPurchasesRoute
   StudentTestHistoryRoute: typeof StudentTestHistoryRoute
   StudentIndexRoute: typeof StudentIndexRoute
+  StudentReceiptPurchaseIdRoute: typeof StudentReceiptPurchaseIdRoute
   StudentResultsAttemptIdRoute: typeof StudentResultsAttemptIdRoute
   StudentReviewAttemptIdRoute: typeof StudentReviewAttemptIdRoute
 }
@@ -920,12 +1061,17 @@ const StudentRouteChildren: StudentRouteChildren = {
   StudentAccountSettingsRoute: StudentAccountSettingsRoute,
   StudentAiRecommendationsRoute: StudentAiRecommendationsRoute,
   StudentBrowseTestsRoute: StudentBrowseTestsRoute,
+  StudentCheckoutRoute: StudentCheckoutRoute,
   StudentMyTestsRoute: StudentMyTestsRoute,
+  StudentPaymentCancelledRoute: StudentPaymentCancelledRoute,
+  StudentPaymentFailedRoute: StudentPaymentFailedRoute,
+  StudentPaymentSuccessRoute: StudentPaymentSuccessRoute,
   StudentProfileRoute: StudentProfileRoute,
   StudentProgressRoute: StudentProgressRoute,
   StudentPurchasesRoute: StudentPurchasesRoute,
   StudentTestHistoryRoute: StudentTestHistoryRoute,
   StudentIndexRoute: StudentIndexRoute,
+  StudentReceiptPurchaseIdRoute: StudentReceiptPurchaseIdRoute,
   StudentResultsAttemptIdRoute: StudentResultsAttemptIdRoute,
   StudentReviewAttemptIdRoute: StudentReviewAttemptIdRoute,
 }
@@ -952,7 +1098,9 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   TestAttemptIdRoute: TestAttemptIdRoute,
   ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
+  ApiPublicPaymentsActionRoute: ApiPublicPaymentsActionRoute,
   ApiPublicQuestionsActionRoute: ApiPublicQuestionsActionRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicTestsActionRoute: ApiPublicTestsActionRoute,
 }
 export const routeTree = rootRouteImport
