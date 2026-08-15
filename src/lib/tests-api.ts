@@ -26,6 +26,13 @@ export interface AttemptResult {
     maximum: number;
     percentage: number | null;
     outcome: "correct" | "partial" | "incorrect" | "pending_ai";
+    breakdown?: {
+      summary?: string;
+      strengths?: string[];
+      improvements?: string[];
+      confidence?: number;
+      criteria?: Array<{ name: string; score: number; feedback: string }>;
+    };
   }>;
   scoredAt: string;
 }
@@ -109,6 +116,21 @@ export interface AdminTemplatesResponse {
   storage: "d1" | "memory";
 }
 
+export interface AiEvaluationJob {
+  id: string;
+  attempt_id: string;
+  attempt_question_id: string;
+  module_key: string;
+  type_key: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  provider: string;
+  model: string;
+  attempt_count: number;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
 export interface GeneratePreviewResponse {
   template: TestTemplateRecord;
   ok: boolean;
@@ -138,6 +160,8 @@ export const startTest = (templateId: string, entitlementId?: string) =>
   });
 
 export const fetchAdminTemplates = () => testsApi<AdminTemplatesResponse>("templates");
+export const fetchAiEvaluations = () =>
+  testsApi<{ jobs: AiEvaluationJob[]; configured: boolean }>("ai-evaluations");
 export const duplicateTemplate = (id: string) =>
   testsApi<{ template: TestTemplateRecord }>("template-duplicate", { id });
 export const setTemplateActive = (id: string, isActive: boolean) =>

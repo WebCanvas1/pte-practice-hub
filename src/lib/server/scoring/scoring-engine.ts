@@ -10,6 +10,33 @@ const aggregate = (earned: number, maximum: number): ScoreAggregate => ({
   percentage: maximum > 0 ? round((earned / maximum) * 100) : 0,
 });
 
+export function rebuildScoreResult(result: AttemptScoreResult): AttemptScoreResult {
+  const modules: AttemptScoreResult["modules"] = {};
+  for (const module of ["speaking", "writing", "reading", "listening"] as ModuleKey[]) {
+    const relevant = result.questions.filter((score) => score.module === module);
+    if (!relevant.length) continue;
+    const scored = relevant.filter((score) => score.status === "scored");
+    const value = aggregate(
+      scored.reduce((sum, score) => sum + score.earned, 0),
+      scored.reduce((sum, score) => sum + score.maximum, 0),
+    );
+    modules[module] = relevant.some((score) => score.status === "pending_ai")
+      ? { ...value, status: "pending_ai" }
+      : value;
+  }
+  const scored = result.questions.filter((score) => score.status === "scored");
+  return {
+    ...result,
+    status: result.questions.some((score) => score.status === "pending_ai") ? "pending_ai" : "completed",
+    overall: aggregate(
+      scored.reduce((sum, score) => sum + score.earned, 0),
+      scored.reduce((sum, score) => sum + score.maximum, 0),
+    ),
+    modules,
+    scoredAt: new Date().toISOString(),
+  };
+}
+
 export function scoreAttempt(
   attemptId: string,
   questions: ScoreableQuestion[],
@@ -53,30 +80,12 @@ export function scoreAttempt(
     };
   });
 
-  const modules: AttemptScoreResult["modules"] = {};
-  for (const module of ["speaking", "writing", "reading", "listening"] as ModuleKey[]) {
-    const relevant = scores.filter((score) => score.module === module);
-    if (!relevant.length) continue;
-    const scored = relevant.filter((score) => score.status === "scored");
-    const value = aggregate(
-      scored.reduce((sum, score) => sum + score.earned, 0),
-      scored.reduce((sum, score) => sum + score.maximum, 0),
-    );
-    modules[module] = relevant.some((score) => score.status === "pending_ai")
-      ? { ...value, status: "pending_ai" }
-      : value;
-  }
-  const deterministic = scores.filter((score) => score.status === "scored");
-  const overall = aggregate(
-    deterministic.reduce((sum, score) => sum + score.earned, 0),
-    deterministic.reduce((sum, score) => sum + score.maximum, 0),
-  );
-  return {
+  return rebuildScoreResult({
     attemptId,
-    status: scores.some((score) => score.status === "pending_ai") ? "pending_ai" : "completed",
-    overall,
-    modules,
+    status: "pending_ai",
+    overall: aggregate(0, 0),
+    modules: {},
     questions: scores,
     scoredAt,
-  };
+  });
 }

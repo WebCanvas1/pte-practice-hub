@@ -90,6 +90,9 @@ export async function clearScoreResult(
 ): Promise<void> {
   memoryResults.delete(attemptId);
   if (!DB) return;
+  await DB.prepare(`DELETE FROM ai_evaluation_jobs WHERE attempt_id = ?`)
+    .bind(attemptId)
+    .run();
   await DB.prepare(`DELETE FROM attempt_question_scores WHERE attempt_id = ?`)
     .bind(attemptId)
     .run();
