@@ -30,6 +30,7 @@ import { Route as AdminAiEvaluationsRouteImport } from './routes/admin.ai-evalua
 import { Route as AdminAuditLogsRouteImport } from './routes/admin.audit-logs'
 import { Route as AdminContentImportsRouteImport } from './routes/admin.content-imports'
 import { Route as AdminCouponsRouteImport } from './routes/admin.coupons'
+import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
 import { Route as AdminQuestionsRouteImport } from './routes/admin.questions'
@@ -54,6 +55,7 @@ import { Route as TestAttemptIdRouteImport } from './routes/test.$attemptId'
 import { Route as StudentReceiptPurchaseIdRouteImport } from './routes/student.receipt.$purchaseId'
 import { Route as StudentResultsAttemptIdRouteImport } from './routes/student.results.$attemptId'
 import { Route as StudentReviewAttemptIdRouteImport } from './routes/student.review.$attemptId'
+import { Route as ApiPublicAdminActionRouteImport } from './routes/api/public/admin/$action'
 import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
 import { Route as ApiPublicContentImportsActionRouteImport } from './routes/api/public/content-imports/$action'
 import { Route as ApiPublicPaymentsActionRouteImport } from './routes/api/public/payments/$action'
@@ -164,6 +166,11 @@ const AdminContentImportsRoute = AdminContentImportsRouteImport.update({
 const AdminCouponsRoute = AdminCouponsRouteImport.update({
   id: '/coupons',
   path: '/coupons',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHealthRoute = AdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
@@ -288,6 +295,11 @@ const StudentReviewAttemptIdRoute = StudentReviewAttemptIdRouteImport.update({
   path: '/review/$attemptId',
   getParentRoute: () => StudentRoute,
 } as any)
+const ApiPublicAdminActionRoute = ApiPublicAdminActionRouteImport.update({
+  id: '/api/public/admin/$action',
+  path: '/api/public/admin/$action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
   id: '/api/public/auth/$action',
   path: '/api/public/auth/$action',
@@ -342,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
   '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/questions': typeof AdminQuestionsRoute
@@ -367,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/student/receipt/$purchaseId': typeof StudentReceiptPurchaseIdRoute
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
+  '/api/public/admin/$action': typeof ApiPublicAdminActionRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/content-imports/$action': typeof ApiPublicContentImportsActionRoute
   '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
@@ -393,6 +407,7 @@ export interface FileRoutesByTo {
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
   '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/questions': typeof AdminQuestionsRoute
@@ -418,6 +433,7 @@ export interface FileRoutesByTo {
   '/student/receipt/$purchaseId': typeof StudentReceiptPurchaseIdRoute
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
+  '/api/public/admin/$action': typeof ApiPublicAdminActionRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/content-imports/$action': typeof ApiPublicContentImportsActionRoute
   '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
@@ -447,6 +463,7 @@ export interface FileRoutesById {
   '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/content-imports': typeof AdminContentImportsRoute
   '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/questions': typeof AdminQuestionsRoute
@@ -472,6 +489,7 @@ export interface FileRoutesById {
   '/student/receipt/$purchaseId': typeof StudentReceiptPurchaseIdRoute
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
+  '/api/public/admin/$action': typeof ApiPublicAdminActionRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
   '/api/public/content-imports/$action': typeof ApiPublicContentImportsActionRoute
   '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
@@ -502,6 +520,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/content-imports'
     | '/admin/coupons'
+    | '/admin/health'
     | '/admin/payments'
     | '/admin/platform-settings'
     | '/admin/questions'
@@ -527,6 +546,7 @@ export interface FileRouteTypes {
     | '/student/receipt/$purchaseId'
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
+    | '/api/public/admin/$action'
     | '/api/public/auth/$action'
     | '/api/public/content-imports/$action'
     | '/api/public/payments/$action'
@@ -553,6 +573,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/content-imports'
     | '/admin/coupons'
+    | '/admin/health'
     | '/admin/payments'
     | '/admin/platform-settings'
     | '/admin/questions'
@@ -578,6 +599,7 @@ export interface FileRouteTypes {
     | '/student/receipt/$purchaseId'
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
+    | '/api/public/admin/$action'
     | '/api/public/auth/$action'
     | '/api/public/content-imports/$action'
     | '/api/public/payments/$action'
@@ -606,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/content-imports'
     | '/admin/coupons'
+    | '/admin/health'
     | '/admin/payments'
     | '/admin/platform-settings'
     | '/admin/questions'
@@ -631,6 +654,7 @@ export interface FileRouteTypes {
     | '/student/receipt/$purchaseId'
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
+    | '/api/public/admin/$action'
     | '/api/public/auth/$action'
     | '/api/public/content-imports/$action'
     | '/api/public/payments/$action'
@@ -657,6 +681,7 @@ export interface RootRouteChildren {
   TestModulesRoute: typeof TestModulesRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   TestAttemptIdRoute: typeof TestAttemptIdRoute
+  ApiPublicAdminActionRoute: typeof ApiPublicAdminActionRoute
   ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
   ApiPublicContentImportsActionRoute: typeof ApiPublicContentImportsActionRoute
   ApiPublicPaymentsActionRoute: typeof ApiPublicPaymentsActionRoute
@@ -812,6 +837,13 @@ declare module '@tanstack/react-router' {
       path: '/coupons'
       fullPath: '/admin/coupons'
       preLoaderRoute: typeof AdminCouponsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/health': {
+      id: '/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AdminHealthRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/payments': {
@@ -982,6 +1014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentReviewAttemptIdRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/api/public/admin/$action': {
+      id: '/api/public/admin/$action'
+      path: '/api/public/admin/$action'
+      fullPath: '/api/public/admin/$action'
+      preLoaderRoute: typeof ApiPublicAdminActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/auth/$action': {
       id: '/api/public/auth/$action'
       path: '/api/public/auth/$action'
@@ -1032,6 +1071,7 @@ interface AdminRouteChildren {
   AdminAuditLogsRoute: typeof AdminAuditLogsRoute
   AdminContentImportsRoute: typeof AdminContentImportsRoute
   AdminCouponsRoute: typeof AdminCouponsRoute
+  AdminHealthRoute: typeof AdminHealthRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminPlatformSettingsRoute: typeof AdminPlatformSettingsRoute
   AdminQuestionsRoute: typeof AdminQuestionsRoute
@@ -1047,6 +1087,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditLogsRoute: AdminAuditLogsRoute,
   AdminContentImportsRoute: AdminContentImportsRoute,
   AdminCouponsRoute: AdminCouponsRoute,
+  AdminHealthRoute: AdminHealthRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminPlatformSettingsRoute: AdminPlatformSettingsRoute,
   AdminQuestionsRoute: AdminQuestionsRoute,
@@ -1118,6 +1159,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestModulesRoute: TestModulesRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   TestAttemptIdRoute: TestAttemptIdRoute,
+  ApiPublicAdminActionRoute: ApiPublicAdminActionRoute,
   ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
   ApiPublicContentImportsActionRoute: ApiPublicContentImportsActionRoute,
   ApiPublicPaymentsActionRoute: ApiPublicPaymentsActionRoute,

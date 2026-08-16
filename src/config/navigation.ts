@@ -15,6 +15,7 @@ import {
   ListChecks,
   Settings,
   ShieldCheck,
+  HeartPulse,
   Sparkles,
   Upload,
   UserCog,
@@ -67,6 +68,7 @@ export const adminNav: NavItem[] = [
   { label: "Coupons", to: "/admin/coupons", icon: BadgePercent },
   { label: "Reports", to: "/admin/reports", icon: BarChart3 },
   { label: "Platform Settings", to: "/admin/platform-settings", icon: Settings },
+  { label: "Platform Health", to: "/admin/health", icon: HeartPulse },
   { label: "Audit Logs", to: "/admin/audit-logs", icon: ShieldCheck },
 ];
 

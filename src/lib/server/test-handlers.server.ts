@@ -489,8 +489,32 @@ const handlers: Record<
     role: "user",
     handler: async (request, ctx, userId) => {
       assertCsrf(request);
+      let availability: {
+        tests?: boolean;
+        maintenanceMode?: boolean;
+        modules?: Record<string, boolean>;
+        difficulties?: Record<string, boolean>;
+      } = {};
+      if (ctx.env.DB) {
+        const row = await ctx.env.DB.prepare(
+          `SELECT value FROM platform_settings WHERE key='availability'`,
+        ).first<{ value: string }>();
+        if (row) {
+          try {
+            availability = JSON.parse(row.value) as typeof availability;
+          } catch {
+            availability = {};
+          }
+        }
+      }
+      if (availability.maintenanceMode || availability.tests === false)
+        throw new HttpError(503, "Tests are not available right now.");
       const data = await parseBody(request, startSchema);
       const template = await requireTemplate(ctx, data.templateId);
+      if (template.module && availability.modules?.[template.module] === false)
+        throw new HttpError(503, "This module is currently unavailable.");
+      if (availability.difficulties?.[template.difficulty] === false)
+        throw new HttpError(503, "This difficulty is currently unavailable.");
       if (!template.isActive) throw new HttpError(400, "This test is not available right now.");
 
       const entitlement = data.entitlementId
