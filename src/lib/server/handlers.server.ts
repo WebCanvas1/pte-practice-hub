@@ -54,11 +54,7 @@ const TOKEN_TTL_SECONDS = { password_reset: 60 * 60, email_verification: 60 * 60
 
 type Handler = (request: Request, ctx: AuthContext) => Promise<Response>;
 
-async function issueToken(
-  ctx: AuthContext,
-  kind: TokenKind,
-  userId: string,
-): Promise<string> {
+async function issueToken(ctx: AuthContext, kind: TokenKind, userId: string): Promise<string> {
   const token = randomToken(32);
   await ctx.store.createToken(kind, {
     id: newId(kind === "password_reset" ? "prt" : "evt"),
@@ -105,6 +101,25 @@ const handlers: Record<string, { method: "GET" | "POST"; handler: Handler }> = {
     method: "POST",
     handler: async (request, ctx) => {
       assertCsrf(request);
+      if (ctx.env.DB) {
+        const row = await ctx.env.DB.prepare(
+          `SELECT value FROM platform_settings WHERE key='availability'`,
+        ).first<{ value: string }>();
+        if (row) {
+          try {
+            const availability = JSON.parse(row.value) as {
+              registrationOpen?: boolean;
+              maintenanceMode?: boolean;
+            };
+            if (availability.maintenanceMode)
+              throw new HttpError(503, "Registration is unavailable during maintenance.");
+            if (availability.registrationOpen === false)
+              throw new HttpError(403, "New registrations are currently closed.");
+          } catch (error) {
+            if (error instanceof HttpError) throw error;
+          }
+        }
+      }
       const data = await parseBody(request, registerSchema);
 
       const existing = await ctx.store.getUserByEmail(data.email);
