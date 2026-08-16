@@ -52,3 +52,13 @@ bucket_name = "pte-portal-media"
 # STRIPE_WEBHOOK_SECRET
 # STRIPE_PUBLISHABLE_KEY
 # CLOUDFLARE_ACCOUNT_ID (only needed by CI / API tooling)
+
+# Optional ingestion orchestration bindings. Create the resources before
+# uncommenting; the application uses a safe inline/database fallback initially.
+# [[queues.producers]]
+# binding = "CONTENT_IMPORT_QUEUE"
+# queue = "pte-content-imports"
+#
+# [[vectorize]]
+# binding = "QUESTION_VECTORS"
+# index_name = "pte-question-vectors"

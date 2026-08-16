@@ -30,6 +30,17 @@ export interface R2Bucket {
   delete: (key: string) => Promise<void>;
 }
 
+export interface QueueBinding {
+  send: (message: unknown) => Promise<void>;
+}
+export interface WorkflowBinding {
+  create: (options: { id: string; params: unknown }) => Promise<unknown>;
+}
+export interface VectorizeBinding {
+  query: (vector: number[], options?: { topK?: number }) => Promise<unknown>;
+  upsert: (vectors: unknown[]) => Promise<unknown>;
+}
+
 export interface AiBinding {
   run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
 }
@@ -52,6 +63,9 @@ export interface WorkerEnv {
   STRIPE_WEBHOOK_SECRET: string | undefined;
   STRIPE_PUBLISHABLE_KEY: string | undefined;
   EMAIL_API_KEY: string | undefined;
+  CONTENT_IMPORT_QUEUE: QueueBinding | undefined;
+  CONTENT_IMPORT_WORKFLOW: WorkflowBinding | undefined;
+  QUESTION_VECTORS: VectorizeBinding | undefined;
 }
 
 let cached: WorkerEnv | undefined;
@@ -92,6 +106,9 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
     STRIPE_WEBHOOK_SECRET: fromProcess("STRIPE_WEBHOOK_SECRET"),
     STRIPE_PUBLISHABLE_KEY: fromProcess("STRIPE_PUBLISHABLE_KEY"),
     EMAIL_API_KEY: fromProcess("EMAIL_API_KEY"),
+    CONTENT_IMPORT_QUEUE: bindings["CONTENT_IMPORT_QUEUE"] as QueueBinding | undefined,
+    CONTENT_IMPORT_WORKFLOW: bindings["CONTENT_IMPORT_WORKFLOW"] as WorkflowBinding | undefined,
+    QUESTION_VECTORS: bindings["QUESTION_VECTORS"] as VectorizeBinding | undefined,
   };
 
   cached = resolved;

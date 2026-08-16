@@ -55,6 +55,7 @@ import { Route as StudentReceiptPurchaseIdRouteImport } from './routes/student.r
 import { Route as StudentResultsAttemptIdRouteImport } from './routes/student.results.$attemptId'
 import { Route as StudentReviewAttemptIdRouteImport } from './routes/student.review.$attemptId'
 import { Route as ApiPublicAuthActionRouteImport } from './routes/api/public/auth/$action'
+import { Route as ApiPublicContentImportsActionRouteImport } from './routes/api/public/content-imports/$action'
 import { Route as ApiPublicPaymentsActionRouteImport } from './routes/api/public/payments/$action'
 import { Route as ApiPublicQuestionsActionRouteImport } from './routes/api/public/questions/$action'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
@@ -292,6 +293,12 @@ const ApiPublicAuthActionRoute = ApiPublicAuthActionRouteImport.update({
   path: '/api/public/auth/$action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicContentImportsActionRoute =
+  ApiPublicContentImportsActionRouteImport.update({
+    id: '/api/public/content-imports/$action',
+    path: '/api/public/content-imports/$action',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsActionRoute = ApiPublicPaymentsActionRouteImport.update({
   id: '/api/public/payments/$action',
   path: '/api/public/payments/$action',
@@ -361,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
+  '/api/public/content-imports/$action': typeof ApiPublicContentImportsActionRoute
   '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
@@ -411,6 +419,7 @@ export interface FileRoutesByTo {
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
+  '/api/public/content-imports/$action': typeof ApiPublicContentImportsActionRoute
   '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
@@ -464,6 +473,7 @@ export interface FileRoutesById {
   '/student/results/$attemptId': typeof StudentResultsAttemptIdRoute
   '/student/review/$attemptId': typeof StudentReviewAttemptIdRoute
   '/api/public/auth/$action': typeof ApiPublicAuthActionRoute
+  '/api/public/content-imports/$action': typeof ApiPublicContentImportsActionRoute
   '/api/public/payments/$action': typeof ApiPublicPaymentsActionRoute
   '/api/public/questions/$action': typeof ApiPublicQuestionsActionRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
     | '/api/public/auth/$action'
+    | '/api/public/content-imports/$action'
     | '/api/public/payments/$action'
     | '/api/public/questions/$action'
     | '/api/public/stripe/webhook'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
     | '/api/public/auth/$action'
+    | '/api/public/content-imports/$action'
     | '/api/public/payments/$action'
     | '/api/public/questions/$action'
     | '/api/public/stripe/webhook'
@@ -620,6 +632,7 @@ export interface FileRouteTypes {
     | '/student/results/$attemptId'
     | '/student/review/$attemptId'
     | '/api/public/auth/$action'
+    | '/api/public/content-imports/$action'
     | '/api/public/payments/$action'
     | '/api/public/questions/$action'
     | '/api/public/stripe/webhook'
@@ -645,6 +658,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   TestAttemptIdRoute: typeof TestAttemptIdRoute
   ApiPublicAuthActionRoute: typeof ApiPublicAuthActionRoute
+  ApiPublicContentImportsActionRoute: typeof ApiPublicContentImportsActionRoute
   ApiPublicPaymentsActionRoute: typeof ApiPublicPaymentsActionRoute
   ApiPublicQuestionsActionRoute: typeof ApiPublicQuestionsActionRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
@@ -975,6 +989,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuthActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/content-imports/$action': {
+      id: '/api/public/content-imports/$action'
+      path: '/api/public/content-imports/$action'
+      fullPath: '/api/public/content-imports/$action'
+      preLoaderRoute: typeof ApiPublicContentImportsActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/$action': {
       id: '/api/public/payments/$action'
       path: '/api/public/payments/$action'
@@ -1098,6 +1119,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   TestAttemptIdRoute: TestAttemptIdRoute,
   ApiPublicAuthActionRoute: ApiPublicAuthActionRoute,
+  ApiPublicContentImportsActionRoute: ApiPublicContentImportsActionRoute,
   ApiPublicPaymentsActionRoute: ApiPublicPaymentsActionRoute,
   ApiPublicQuestionsActionRoute: ApiPublicQuestionsActionRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,

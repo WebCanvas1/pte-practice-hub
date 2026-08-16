@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test:payments": "node --experimental-strip-types --test src/lib/server/payments.test.ts",
+    "test:imports": "node --experimental-strip-types --test src/lib/server/content-extraction.test.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
