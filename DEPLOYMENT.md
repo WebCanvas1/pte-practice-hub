@@ -107,3 +107,19 @@ SameSite=Lax session cookies, hashed session/reset/verification tokens,
 origin + double-submit CSRF checks, Zod validation on every payload, server-side
 role checks, login rate limiting with temporary account lockout, session
 revocation on password change/reset, and audit logging of all auth events.
+
+## Content ingestion
+
+Apply `migrations/0012_content_ingestion.sql` and keep the existing `MEDIA` R2
+binding. Original files are stored under `content-imports/<job>/<upload>/`.
+The initial deployment processes jobs through the Worker with D1-backed state;
+`CONTENT_IMPORT_QUEUE`, `CONTENT_IMPORT_WORKFLOW`, and `QUESTION_VECTORS` are
+optional provider boundaries for scaling processing and semantic search. The
+database text-similarity implementation remains the clean fallback when
+Vectorize is unavailable.
+
+Uploads are limited to 25 MB each and allow PDF, DOCX, TXT, CSV, XLSX, common
+image/audio formats, and ZIP. Executable signatures are rejected. Uploaded
+instructions are treated strictly as untrusted content, never as system or tool
+instructions. AI confidence may preselect a candidate, but publication always
+requires a stored admin approval followed by an explicit publish action.
