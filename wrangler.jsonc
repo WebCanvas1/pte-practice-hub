@@ -49,13 +49,13 @@
         {
           "binding": "DB",
           "database_name": "pte_portal_preview",
-          "database_id": "REPLACE_PREVIEW_D1_ID",
+          "database_id": "9850bc45-09b2-41db-96bd-b26c7e867234",
           "migrations_dir": "migrations",
         },
       ],
       "kv_namespaces": [
-        { "binding": "SETTINGS_KV", "id": "REPLACE_PREVIEW_SETTINGS_KV_ID" },
-        { "binding": "SESSIONS_KV", "id": "REPLACE_PREVIEW_SESSIONS_KV_ID" },
+        { "binding": "SETTINGS_KV", "id": "b0be0f63850f4ce4994d846d7a44c6a9" },
+        { "binding": "SESSIONS_KV", "id": "2b0893b63cd246ad8bcaad95c2f6b1e1" },
       ],
       "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "pte-portal-media-preview" }],
       "queues": {
