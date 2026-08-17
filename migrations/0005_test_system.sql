@@ -3,7 +3,7 @@
 
 PRAGMA foreign_keys = ON;
 
-/* ------------------------------- templates -------------------------------- */
+-- Templates
 
 CREATE TABLE IF NOT EXISTS test_templates (
   id                 TEXT PRIMARY KEY,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS test_template_rules (
 CREATE INDEX IF NOT EXISTS idx_test_template_rules_template
   ON test_template_rules(template_id, position);
 
-/* ------------------------------ entitlements ------------------------------ */
+-- Entitlements
 -- One entitlement = one right to generate one attempt from one template.
 -- Payments are not implemented yet; entitlements are granted directly.
 
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_entitlements_user ON test_entitlements(user_id, s
 CREATE UNIQUE INDEX IF NOT EXISTS idx_entitlements_attempt
   ON test_entitlements(attempt_id) WHERE attempt_id IS NOT NULL;
 
-/* -------------------------------- attempts -------------------------------- */
+-- Attempts
 
 CREATE TABLE IF NOT EXISTS test_attempts (
   id                 TEXT PRIMARY KEY,
@@ -124,7 +124,7 @@ CREATE INDEX IF NOT EXISTS idx_attempt_questions_attempt
 CREATE INDEX IF NOT EXISTS idx_attempt_questions_question
   ON attempt_questions(question_id);
 
-/* --------------------------------- answers -------------------------------- */
+-- Answers
 
 CREATE TABLE IF NOT EXISTS student_answers (
   id                   TEXT PRIMARY KEY,
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS answer_revisions (
 );
 CREATE INDEX IF NOT EXISTS idx_answer_revisions_answer ON answer_revisions(answer_id);
 
-/* --------------------------------- events --------------------------------- */
+-- Events
 -- Timeline of everything that happens to an attempt: generated, started,
 -- paused, resumed, navigation, submitted, expired, scored.
 

@@ -3,7 +3,7 @@
 
 PRAGMA foreign_keys = ON;
 
-/* --------------------------------- taxonomy -------------------------------- */
+-- Taxonomy
 
 CREATE TABLE IF NOT EXISTS modules (
   key         TEXT PRIMARY KEY,          -- speaking | reading | writing | listening
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS question_types (
 );
 CREATE INDEX IF NOT EXISTS idx_question_types_module ON question_types(module_key);
 
-/* --------------------------------- questions ------------------------------- */
+-- Questions
 
 CREATE TABLE IF NOT EXISTS questions (
   id                  TEXT PRIMARY KEY,
@@ -68,7 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON questions(difficulty);
 CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions(topic);
 CREATE INDEX IF NOT EXISTS idx_questions_created ON questions(created_at);
 
-/* ------------------------------ version history ---------------------------- */
+-- Version history
 -- Immutable snapshots. A completed attempt stores the version number it used,
 -- so editing a published question never changes an existing attempt.
 
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS question_versions (
 );
 CREATE INDEX IF NOT EXISTS idx_question_versions_question ON question_versions(question_id);
 
-/* ---------------------------------- options -------------------------------- */
+-- Options
 
 CREATE TABLE IF NOT EXISTS question_options (
   id          TEXT PRIMARY KEY,
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS question_options (
 );
 CREATE INDEX IF NOT EXISTS idx_question_options_question ON question_options(question_id, position);
 
-/* ---------------------------------- assets --------------------------------- */
+-- Assets
 -- Files themselves live in R2; this table stores the metadata and object key.
 
 CREATE TABLE IF NOT EXISTS question_assets (
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS question_assets (
 );
 CREATE INDEX IF NOT EXISTS idx_question_assets_question ON question_assets(question_id, kind);
 
-/* ----------------------------------- tags ---------------------------------- */
+-- Tags
 
 CREATE TABLE IF NOT EXISTS question_tags (
   id         TEXT PRIMARY KEY,
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS question_tag_links (
 );
 CREATE INDEX IF NOT EXISTS idx_question_tag_links_tag ON question_tag_links(tag_id);
 
-/* --------------------------------- reviews --------------------------------- */
+-- Reviews
 
 CREATE TABLE IF NOT EXISTS question_reviews (
   id          TEXT PRIMARY KEY,
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS question_reviews (
 );
 CREATE INDEX IF NOT EXISTS idx_question_reviews_question ON question_reviews(question_id, created_at);
 
-/* ------------------------------- usage stats ------------------------------- */
+-- Usage statistics
 
 CREATE TABLE IF NOT EXISTS question_usage_stats (
   question_id      TEXT PRIMARY KEY REFERENCES questions(id) ON DELETE CASCADE,
