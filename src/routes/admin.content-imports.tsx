@@ -147,7 +147,8 @@ function Page() {
                     toggle={() =>
                       setSelected((prev) => {
                         const next = new Set(prev);
-                        next.has(q.id) ? next.delete(q.id) : next.add(q.id);
+                        if (next.has(q.id)) next.delete(q.id);
+                        else next.add(q.id);
                         return next;
                       })
                     }

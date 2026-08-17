@@ -37,7 +37,7 @@ export function ResponseRecorder({
   const chunks = React.useRef<Blob[]>([]);
 
   const stop = React.useCallback(() => {
-    recorder.current?.state === "recording" && recorder.current.stop();
+    if (recorder.current?.state === "recording") recorder.current.stop();
   }, []);
 
   const upload = React.useCallback(

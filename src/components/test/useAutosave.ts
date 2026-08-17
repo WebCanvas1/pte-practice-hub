@@ -3,8 +3,8 @@
  *
  * Saves after typing stops, on navigation, on an interval, and before
  * submission. When the network drops, the newest payload per question is kept
- * in a queue and flushed as soon as connectivity returns. Answers are also
- * mirrored to sessionStorage so a page refresh restores unsaved edits.
+ * in a short-lived in-memory queue and flushed as soon as connectivity returns.
+ * Durable drafts are always stored by the server in D1.
  */
 import * as React from "react";
 
@@ -23,10 +23,6 @@ export interface PendingSave {
 
 const DEBOUNCE_MS = 1200;
 const INTERVAL_MS = 20000;
-
-export function draftStorageKey(attemptId: string) {
-  return `pte_attempt_draft_${attemptId}`;
-}
 
 export function useAutosave(attemptId: string, enabled: boolean) {
   const [state, setState] = React.useState<SaveState>("idle");

@@ -81,7 +81,11 @@ export interface QuestionStore {
   readonly kind: "d1" | "memory";
   list: (filters: QuestionFilters) => Promise<QuestionListResult>;
   get: (id: string) => Promise<QuestionRecord | null>;
-  create: (input: QuestionWriteInput, userId: string | null, status?: QuestionStatus) => Promise<QuestionRecord>;
+  create: (
+    input: QuestionWriteInput,
+    userId: string | null,
+    status?: QuestionStatus,
+  ) => Promise<QuestionRecord>;
   update: (
     id: string,
     input: QuestionWriteInput,
@@ -101,7 +105,11 @@ export interface QuestionStore {
   remove: (id: string) => Promise<void>;
   versions: (id: string) => Promise<QuestionVersionSummary[]>;
   version: (id: string, versionNumber: number) => Promise<QuestionRecord | null>;
-  restoreVersion: (id: string, versionNumber: number, userId: string | null) => Promise<QuestionRecord>;
+  restoreVersion: (
+    id: string,
+    versionNumber: number,
+    userId: string | null,
+  ) => Promise<QuestionRecord>;
 }
 
 const now = () => new Date().toISOString();
@@ -337,7 +345,13 @@ function createD1QuestionStore(db: D1Database): QuestionStore {
           row.id,
         ),
         row.audio_asset_id
-          ? first<{ id: string; url: string; transcript: string | null; duration_seconds: number | null; mime_type: string | null }>(
+          ? first<{
+              id: string;
+              url: string;
+              transcript: string | null;
+              duration_seconds: number | null;
+              mime_type: string | null;
+            }>(
               `SELECT id, url, transcript, duration_seconds, mime_type FROM question_assets WHERE id = ?`,
               row.audio_asset_id,
             )
@@ -603,7 +617,11 @@ function createD1QuestionStore(db: D1Database): QuestionStore {
       );
       await upsertQuestion(next);
       await writeSideTables(next);
-      await saveVersion(next, userId, changeNote || (bumpVersion ? "Edited published question" : "Edited draft"));
+      await saveVersion(
+        next,
+        userId,
+        changeNote || (bumpVersion ? "Edited published question" : "Edited draft"),
+      );
       return next;
     },
 
@@ -719,7 +737,9 @@ interface MemoryQuestionDb {
 const globalRef = globalThis as unknown as { __pteQuestionDb?: MemoryQuestionDb };
 
 function seedRecord(seedItem: (typeof questionSeed)[number], index: number): QuestionRecord {
-  const createdAt = new Date(Date.UTC(2026, 0, 5 + (index % 40), 9, (index * 7) % 60)).toISOString();
+  const createdAt = new Date(
+    Date.UTC(2026, 0, 5 + (index % 40), 9, (index * 7) % 60),
+  ).toISOString();
   const def = questionTypeMap[seedItem.type];
   return {
     ...emptyRecord(),
@@ -967,5 +987,6 @@ function createMemoryQuestionStore(): QuestionStore {
 }
 
 export function getQuestionStore(env: WorkerEnv): QuestionStore {
-  return env.DB ? createD1QuestionStore(env.DB) : createMemoryQuestionStore();
+  if (!env.DB) throw new Error("D1 binding DB is required.");
+  return createD1QuestionStore(env.DB);
 }

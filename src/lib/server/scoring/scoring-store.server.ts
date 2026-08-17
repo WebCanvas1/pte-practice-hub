@@ -1,13 +1,11 @@
 import type { D1Database } from "../bindings.server";
 import type { AttemptScoreResult } from "./types";
 
-const memoryResults = new Map<string, AttemptScoreResult>();
-
 export async function loadScoreResult(
   DB: D1Database | undefined,
   attemptId: string,
 ): Promise<AttemptScoreResult | null> {
-  if (!DB) return memoryResults.get(attemptId) ?? null;
+  if (!DB) throw new Error("D1 binding DB is required for score storage.");
   const row = await DB.prepare(
     `SELECT result_json FROM attempt_scoring_results WHERE attempt_id = ?`,
   )
@@ -20,10 +18,7 @@ export async function persistScoreResult(
   DB: D1Database | undefined,
   result: AttemptScoreResult,
 ): Promise<void> {
-  if (!DB) {
-    memoryResults.set(result.attemptId, result);
-    return;
-  }
+  if (!DB) throw new Error("D1 binding DB is required for score storage.");
   for (const score of result.questions) {
     await DB.prepare(
       `INSERT INTO attempt_question_scores
@@ -88,11 +83,8 @@ export async function clearScoreResult(
   DB: D1Database | undefined,
   attemptId: string,
 ): Promise<void> {
-  memoryResults.delete(attemptId);
-  if (!DB) return;
-  await DB.prepare(`DELETE FROM ai_evaluation_jobs WHERE attempt_id = ?`)
-    .bind(attemptId)
-    .run();
+  if (!DB) throw new Error("D1 binding DB is required for score storage.");
+  await DB.prepare(`DELETE FROM ai_evaluation_jobs WHERE attempt_id = ?`).bind(attemptId).run();
   await DB.prepare(`DELETE FROM attempt_question_scores WHERE attempt_id = ?`)
     .bind(attemptId)
     .run();

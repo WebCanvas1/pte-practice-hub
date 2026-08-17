@@ -156,9 +156,7 @@ export function userAgent(request: Request): string | null {
 
 /* ------------------------------- rate limiting ----------------------------- */
 
-const memoryBuckets = new Map<string, { count: number; resetAt: number }>();
-
-/** Uses SESSIONS_KV when bound, otherwise an in-process bucket (dev). */
+/** Durable, cross-isolate rate limits use the SESSIONS_KV binding. */
 export async function rateLimit(
   key: string,
   limit: number,
@@ -167,29 +165,16 @@ export async function rateLimit(
   const env: WorkerEnv = await getWorkerEnv();
   const kv = env.SESSIONS_KV;
 
-  if (kv) {
-    const raw = await kv.get(`rl:${key}`);
-    const count = raw ? Number(raw) : 0;
-    if (count >= limit) return { allowed: false, retryAfter: windowSeconds };
-    await kv.put(`rl:${key}`, String(count + 1), { expirationTtl: windowSeconds });
-    return { allowed: true, retryAfter: 0 };
-  }
-
-  const nowMs = Date.now();
-  const bucket = memoryBuckets.get(key);
-  if (!bucket || bucket.resetAt < nowMs) {
-    memoryBuckets.set(key, { count: 1, resetAt: nowMs + windowSeconds * 1000 });
-    return { allowed: true, retryAfter: 0 };
-  }
-  if (bucket.count >= limit) {
-    return { allowed: false, retryAfter: Math.ceil((bucket.resetAt - nowMs) / 1000) };
-  }
-  bucket.count += 1;
+  if (!kv) throw new HttpError(503, "Authentication protection is temporarily unavailable.");
+  const raw = await kv.get(`rl:${key}`);
+  const count = raw ? Number(raw) : 0;
+  if (count >= limit) return { allowed: false, retryAfter: windowSeconds };
+  await kv.put(`rl:${key}`, String(count + 1), { expirationTtl: windowSeconds });
   return { allowed: true, retryAfter: 0 };
 }
 
 export async function resetRateLimit(key: string): Promise<void> {
   const env = await getWorkerEnv();
-  if (env.SESSIONS_KV) await env.SESSIONS_KV.delete(`rl:${key}`);
-  memoryBuckets.delete(key);
+  if (!env.SESSIONS_KV) throw new HttpError(503, "Authentication protection is temporarily unavailable.");
+  await env.SESSIONS_KV.delete(`rl:${key}`);
 }

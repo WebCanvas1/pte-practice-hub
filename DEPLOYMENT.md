@@ -1,125 +1,50 @@
-# Deployment & local development
+# Cloudflare production deployment
 
-## Local development
+The portal is a TanStack Start application running in one Cloudflare Worker. Static assets are served by Workers Static Assets; server routes use D1, R2, KV, Queues, Workflows and Workers AI. Preview and production resources must be isolated.
 
-```bash
-npm install
-npm run dev        # http://localhost:8080
-```
+## Prerequisites
 
-Without a D1 binding the auth API automatically uses an in-memory store
-(`storage: "memory"` in `GET /api/public/auth/session`), so registration, login,
-verification and password reset work locally. Verification / reset links are
-printed to the server console and returned as `devLink` in dev responses.
+Install Bun and authenticate Wrangler with `bunx wrangler login`. Replace every `REPLACE_*` value in `wrangler.jsonc` before using preview. Keep secrets out of Git and Cloudflare build variables marked as plain text.
 
-Run against real Cloudflare bindings:
+## Exact setup
 
-```bash
-npm run build
-npx wrangler d1 create pte_portal
-npx wrangler kv namespace create SETTINGS_KV
-npx wrangler kv namespace create SESSIONS_KV
-npx wrangler r2 bucket create pte-portal-media
-# paste the returned ids into wrangler.toml
-npx wrangler d1 migrations apply pte_portal --local
-npx wrangler dev
-```
+1. **Create the Worker project.** In Cloudflare Workers & Pages choose Create > Import a repository, select this GitHub repository, and leave deployment disabled until resources are ready. Use build command `bun run build:production` and deploy command `bun run deploy:production`.
+2. **Create D1.** Run `bunx wrangler d1 create pte_portal` and `bunx wrangler d1 create pte_portal_preview`. Put the returned IDs in the matching `wrangler.jsonc` environments.
+3. **Apply migrations.** Run `bunx wrangler d1 migrations apply pte_portal --remote --env production`. Run the same command for `pte_portal_preview --env preview`. Take a D1 backup before later schema changes and apply migrations sequentially; never edit an already-applied migration.
+4. **Create R2.** Run `bunx wrangler r2 bucket create pte-portal-media` and `bunx wrangler r2 bucket create pte-portal-media-preview`. Originals, question media and speaking recordings remain private and are served only through authorised Worker routes.
+5. **Create KV.** Create `SETTINGS_KV` and `SESSIONS_KV` namespaces for both environments with `bunx wrangler kv namespace create <NAME>`. Insert the IDs in each environment.
+6. **Create queues.** Create `pte-content-imports`, `pte-content-imports-dlq`, and their `-preview` equivalents using `bunx wrangler queues create <name>`. The Worker retries failed imports and moves exhausted messages to the DLQ.
+7. **Configure Workflows.** The `ContentImportWorkflow` class and bindings are declared in `wrangler.jsonc`. Deploy once after resources exist; uploads prefer Workflow orchestration and retain the Queue path for retryable processing.
+8. **Configure Workers AI.** The `AI` binding is declared per environment. Model names are non-secret vars and can later be changed in admin settings. AI failures leave factual results intact and jobs visible for retry.
+9. **Configure Vectorize (optional).** Create `pte-question-vectors` with dimensions matching the selected embedding model, add a `QUESTION_VECTORS` binding to each environment, and deploy. Until enabled, duplicate detection uses exact, normalized and D1 text-similarity checks.
+10. **Add Stripe secrets.** For each environment run `bunx wrangler secret put STRIPE_SECRET_KEY --env production`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PUBLISHABLE_KEY`; repeat with test-mode values for preview. Also set `SESSION_SECRET`, `ADMIN_SETUP_SECRET`, and optional `EMAIL_API_KEY`.
+11. **Add AI-provider secrets.** Workers AI needs no API key. If a future provider is selected, store its key with `wrangler secret put`; never add it to platform settings or browser variables.
+12. **Deploy from GitHub.** Commit `bun.lock`. Cloudflare must run `bun install --frozen-lockfile`, `bun run build:production`, and `bun run deploy:production`. Preview uses the corresponding preview scripts/environment.
+13. **Configure the custom domain.** Add the domain under Worker Settings > Domains & Routes, then change production `APP_URL` to the canonical HTTPS origin and redeploy. Redirect alternate hosts at Cloudflare and retain HSTS only after HTTPS is verified.
+14. **Configure Stripe webhooks.** Create an endpoint at `https://<domain>/api/public/stripe/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `checkout.session.async_payment_failed`. Store that endpoint's unique signing secret. Re-send one event to verify idempotency.
+15. **Create the first admin.** POST once to `/api/public/auth/admin-setup` with `setupSecret`, name, email, password and confirmation. The endpoint disables itself after an admin exists. Rotate or delete `ADMIN_SETUP_SECRET` afterwards.
+16. **Run production smoke tests.** Check `/api/health`, register/login/logout, admin authorization, CSV import/approval/publication, a Stripe test checkout plus webhook entitlement, test start/submission/scoring, R2 audio access controls, empty states, report ownership, mobile layouts, and queue/DLQ visibility.
 
-## Cloudflare deployment (GitHub → Workers)
+## Environments and bindings
 
-1. Push the repo to GitHub and connect it in Cloudflare Workers Builds.
-2. Build command `npm run build`, deploy command `npx nitro deploy --prebuilt`.
-   (Nitro generates `dist/server/wrangler.json` and overrides `main`/`assets`
-   from `wrangler.toml`; bindings and vars in `wrangler.toml` are still used.)
-3. Apply migrations to the remote database:
-   `npx wrangler d1 migrations apply pte_portal --remote`
-4. Set secrets (below), then create the first administrator:
+| Binding | Service | Purpose |
+| --- | --- | --- |
+| `DB` | D1 | identity, content, tests, payments, results, settings, audits and jobs |
+| `MEDIA` | R2 | uploads, question media and speaking recordings |
+| `SETTINGS_KV` | KV | cached platform settings |
+| `SESSIONS_KV` | KV | authentication throttles and session/rate-limit data |
+| `AI` | Workers AI | transcription, scoring feedback and import assistance |
+| `CONTENT_IMPORT_QUEUE` | Queue | retryable ingestion jobs |
+| `CONTENT_IMPORT_WORKFLOW` | Workflow | durable import orchestration |
+| `QUESTION_VECTORS` | Vectorize, optional | semantic duplicate candidates |
+| `ASSETS` | Static Assets | hashed browser bundles |
 
-```bash
-curl -X POST https://<app>/api/public/auth/admin-setup \
-  -H 'content-type: application/json' \
-  -d '{"setupSecret":"<ADMIN_SETUP_SECRET>","firstName":"Site","lastName":"Admin",
-       "email":"admin@example.com","password":"<strong password>","confirmPassword":"<strong password>"}'
-```
+Required secrets are `SESSION_SECRET`, `ADMIN_SETUP_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PUBLISHABLE_KEY`. `EMAIL_API_KEY` and external AI-provider keys are optional. Non-secret vars are `APP_ENV`, `APP_URL`, `SUPPORT_EMAIL`, and AI model names.
 
-The route refuses to run once an admin exists, and only works when
-`ADMIN_SETUP_SECRET` is configured. No admin credentials exist in frontend code.
+## Operations, privacy and limitations
 
-## Required secrets (`wrangler secret put <NAME>`)
+Use the admin health and failed-job pages plus structured Worker logs (`requestId`, path, status and duration). Alert on 5xx rate, Stripe webhook failures, AI/scoring backlog, Queue DLQ depth, D1 latency, R2 errors and low question pools. Cloudflare log retention is plan-dependent; export only scrubbed operational logs and set a documented deletion period.
 
-| Secret                   | Purpose                                               |
-| ------------------------ | ----------------------------------------------------- |
-| `SESSION_SECRET`         | reserved for signed/rotated session material          |
-| `ADMIN_SETUP_SECRET`     | one-time admin bootstrap route                        |
-| `STRIPE_SECRET_KEY`      | Stripe Checkout API key (`sk_test_...` for test mode) |
-| `STRIPE_WEBHOOK_SECRET`  | Stripe endpoint signing secret (`whsec_...`)          |
-| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (`pk_test_...` for test mode)  |
-| `EMAIL_API_KEY`          | Optional Resend API key for payment confirmations     |
-| `CLOUDFLARE_ACCOUNT_ID`  | CI / API tooling only                                 |
+Speaking recordings are private R2 objects and must follow the configured audio-retention period. Account deletion must revoke sessions, remove personal rows after the grace period, and delete associated R2 objects. Public consent copy must disclose automated AI processing and link to the privacy policy. Results remain practice estimates, not official Pearson scores.
 
-## Vars
-
-`APP_URL`, `SUPPORT_EMAIL` (set in `wrangler.toml` `[vars]`).
-
-When `EMAIL_API_KEY` is configured, `SUPPORT_EMAIL` must be a sender verified in
-Resend. Payment fulfilment remains successful if email delivery fails; the
-failure is written to Worker logs for operational follow-up.
-
-## Stripe Checkout and webhooks
-
-Use Stripe test-mode keys until launch. In Stripe Workbench, create a webhook
-endpoint at `https://<app>/api/public/stripe/webhook` and subscribe to
-`checkout.session.completed`, `checkout.session.async_payment_succeeded`, and
-`checkout.session.async_payment_failed`. Copy its signing secret into
-`STRIPE_WEBHOOK_SECRET`; each environment/endpoint has a different secret.
-
-For local testing, run `stripe listen --forward-to localhost:8080/api/public/stripe/webhook`
-and use the temporary `whsec_...` value printed by the Stripe CLI. A successful
-return page never unlocks a test: only the verified webhook (or a server-validated
-zero-total checkout) creates an entitlement. Re-send the same event from Stripe
-Workbench to verify duplicate delivery remains idempotent, test a successful
-Checkout with Stripe's test card `4242 4242 4242 4242`, cancel a second Checkout,
-and confirm neither the return URL nor a cancelled session can start a test.
-
-Apply `migrations/0011_stripe_payments.sql` before enabling Checkout. Product
-and active-price rows in D1 are authoritative; the browser never submits an
-amount. Future price changes should insert a new active `prices` row and retire
-the old row, preserving historical receipts.
-
-## Bindings
-
-| Binding       | Type | Use                                                                                                                                     |
-| ------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `DB`          | D1   | users, user_profiles, user_sessions, password_reset_tokens, email_verification_tokens, roles, user_roles, audit_logs, platform_settings |
-| `SETTINGS_KV` | KV   | platform settings / cached config                                                                                                       |
-| `SESSIONS_KV` | KV   | login rate-limit counters, session lookups                                                                                              |
-| `MEDIA`       | R2   | future audio recordings and media                                                                                                       |
-
-## API surface
-
-`/api/public/auth/<action>` — `session` (GET), `register`, `login`, `logout`,
-`logout-all`, `forgot-password`, `reset-password`, `change-password`,
-`verify-email`, `resend-verification`, `profile`, `email-preferences`,
-`request-deletion`, `audit-logs` (GET, admin only), `admin-setup`.
-
-Security: PBKDF2-SHA256 password hashing (WebCrypto), HTTP-only + Secure +
-SameSite=Lax session cookies, hashed session/reset/verification tokens,
-origin + double-submit CSRF checks, Zod validation on every payload, server-side
-role checks, login rate limiting with temporary account lockout, session
-revocation on password change/reset, and audit logging of all auth events.
-
-## Content ingestion
-
-Apply `migrations/0012_content_ingestion.sql` and keep the existing `MEDIA` R2
-binding. Original files are stored under `content-imports/<job>/<upload>/`.
-The initial deployment processes jobs through the Worker with D1-backed state;
-`CONTENT_IMPORT_QUEUE`, `CONTENT_IMPORT_WORKFLOW`, and `QUESTION_VECTORS` are
-optional provider boundaries for scaling processing and semantic search. The
-database text-similarity implementation remains the clean fallback when
-Vectorize is unavailable.
-
-Uploads are limited to 25 MB each and allow PDF, DOCX, TXT, CSV, XLSX, common
-image/audio formats, and ZIP. Executable signatures are rejected. Uploaded
-instructions are treated strictly as untrusted content, never as system or tool
-instructions. AI confidence may preselect a candidate, but publication always
-requires a stored admin approval followed by an explicit publish action.
+Known limitations: Vectorize and external AI Gateway are optional and not enabled in the committed configuration; transactional email depends on a configured provider; PDF export uses printable HTML; CSP currently permits inline TanStack bootstrap scripts and should move to nonce-based CSP when framework support is adopted.

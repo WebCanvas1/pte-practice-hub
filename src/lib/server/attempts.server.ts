@@ -181,7 +181,10 @@ export function normaliseAnswer(
   const selections = (data.selections ?? []).filter((value) => typeof value === "string");
 
   return {
-    text: caps.writtenResponse || caps.shortAnswer || caps.blanks ? (input.text ?? "").slice(0, 20000) : "",
+    text:
+      caps.writtenResponse || caps.shortAnswer || caps.blanks
+        ? (input.text ?? "").slice(0, 20000)
+        : "",
     data: {
       selections: caps.options ? (single ? selections.slice(0, 1) : selections.slice(0, 20)) : [],
       blanks: caps.blanks
@@ -242,38 +245,30 @@ export async function buildReview(
 
 /* ---------------------------- R2 media handling ---------------------------- */
 
-/** Dev fallback when no R2 binding exists (local `vite dev`). */
-const memoryMedia = new Map<string, { body: ArrayBuffer; contentType: string }>();
-
 export async function putResponseAudio(
   key: string,
   body: ArrayBuffer,
   contentType: string,
 ): Promise<void> {
   const env = await getWorkerEnv();
-  if (env.MEDIA) {
-    await env.MEDIA.put(key, body);
-    return;
-  }
-  memoryMedia.set(key, { body, contentType });
+  if (!env.MEDIA) throw new Error("R2 binding MEDIA is required for audio storage.");
+  await env.MEDIA.put(key, body, { httpMetadata: { contentType } });
 }
 
 export async function getMediaObject(
   key: string,
 ): Promise<{ body: ArrayBuffer; contentType: string } | null> {
   const env = await getWorkerEnv();
-  if (env.MEDIA) {
-    const object = (await env.MEDIA.get(key)) as
-      | { arrayBuffer: () => Promise<ArrayBuffer>; httpMetadata?: { contentType?: string } }
-      | null
-      | undefined;
-    if (!object) return null;
-    return {
-      body: await object.arrayBuffer(),
-      contentType: object.httpMetadata?.contentType ?? "application/octet-stream",
-    };
-  }
-  return memoryMedia.get(key) ?? null;
+  if (!env.MEDIA) throw new Error("R2 binding MEDIA is required for audio storage.");
+  const object = (await env.MEDIA.get(key)) as
+    | { arrayBuffer: () => Promise<ArrayBuffer>; httpMetadata?: { contentType?: string } }
+    | null
+    | undefined;
+  if (!object) return null;
+  return {
+    body: await object.arrayBuffer(),
+    contentType: object.httpMetadata?.contentType ?? "application/octet-stream",
+  };
 }
 
 export const responseAudioKey = (attemptId: string, attemptQuestionId: string) =>

@@ -1,4 +1,3 @@
-import { Buffer } from "node:buffer";
 import { z } from "zod";
 
 import { questionTypeMap, type QuestionRecord } from "@/config/questions";
@@ -86,7 +85,8 @@ export function parseSpeakingEvaluation(
 async function transcribe(env: WorkerEnv, audio: ArrayBuffer) {
   if (!env.AI) throw new Error("Cloudflare Workers AI binding is not configured.");
   const raw = await env.AI.run(env.AI_TRANSCRIPTION_MODEL ?? DEFAULT_TRANSCRIPTION_MODEL, {
-    audio: Buffer.from(audio).toString("base64"),
+    // Workers AI accepts byte arrays; avoid a second Base64 copy of the recording.
+    audio: Array.from(new Uint8Array(audio)),
     task: "transcribe",
     language: "en",
     vad_filter: true,
