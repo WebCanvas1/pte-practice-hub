@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { AudioPrompt } from "@/components/test/AudioPrompt";
 import { ResponseRecorder } from "@/components/test/ResponseRecorder";
 import { PassageBlock, QuestionRenderer } from "@/components/test/renderers";
-import { draftStorageKey, useAutosave } from "@/components/test/useAutosave";
+import { useAutosave } from "@/components/test/useAutosave";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -131,8 +131,7 @@ function SystemCheck({ session, onReady }: { session: RunnerSession; onReady: ()
   const [mic, setMic] = React.useState<"unknown" | "ok" | "denied">("unknown");
   const [audio, setAudio] = React.useState(false);
 
-  const browserOk =
-    typeof window !== "undefined" && typeof window.MediaRecorder !== "undefined";
+  const browserOk = typeof window !== "undefined" && typeof window.MediaRecorder !== "undefined";
 
   const rows = [
     { label: "Browser support", ok: browserOk, hint: "Chrome, Edge, Firefox or Safari" },
@@ -259,13 +258,6 @@ function Runner({ session }: { session: RunnerSession }) {
     const base: Record<string, AnswerPayload> = {};
     for (const question of questions) base[question.attemptQuestionId] = emptyAnswer();
     for (const saved of session.answers) base[saved.attemptQuestionId] = { ...saved };
-    // Restore anything that was typed but never reached the server.
-    try {
-      const raw = sessionStorage.getItem(draftStorageKey(attempt.id));
-      if (raw) Object.assign(base, JSON.parse(raw) as Record<string, AnswerPayload>);
-    } catch {
-      /* ignore malformed drafts */
-    }
     return base;
   });
 
@@ -284,14 +276,6 @@ function Runner({ session }: { session: RunnerSession }) {
   const autosave = useAutosave(attempt.id, true);
 
   const secondsLeft = useCountdown(attempt.deadline);
-
-  React.useEffect(() => {
-    try {
-      sessionStorage.setItem(draftStorageKey(attempt.id), JSON.stringify(answers));
-    } catch {
-      /* storage may be unavailable in private mode */
-    }
-  }, [answers, attempt.id]);
 
   React.useEffect(() => {
     const onChange = () => setFullscreen(Boolean(document.fullscreenElement) || true);
@@ -342,7 +326,6 @@ function Runner({ session }: { session: RunnerSession }) {
         await autosave.flush();
         setSubmissionMessage("Calculating your results…");
         await submitTest(attempt.id, reason);
-        sessionStorage.removeItem(draftStorageKey(attempt.id));
         toast.success(reason === "manual" ? "Test submitted." : "Time expired — test submitted.");
         await navigate({ to: "/student/results/$attemptId", params: { attemptId: attempt.id } });
       } catch {
@@ -503,14 +486,18 @@ function Runner({ session }: { session: RunnerSession }) {
             <AlertDialogTitle>Review your answers</AlertDialogTitle>
             <AlertDialogDescription>
               {answeredCount} answered · {questions.length - answeredCount} unanswered ·{" "}
-              {questions.filter((entry) => answers[entry.attemptQuestionId]?.flagged).length} flagged
+              {questions.filter((entry) => answers[entry.attemptQuestionId]?.flagged).length}{" "}
+              flagged
             </AlertDialogDescription>
           </AlertDialogHeader>
           <ul className="max-h-64 overflow-y-auto rounded-xl border">
             {questions.map((entry, position) => {
               const entryAnswer = answers[entry.attemptQuestionId] ?? emptyAnswer();
               return (
-                <li key={entry.attemptQuestionId} className="flex items-center gap-2 border-b p-2 text-sm last:border-b-0">
+                <li
+                  key={entry.attemptQuestionId}
+                  className="flex items-center gap-2 border-b p-2 text-sm last:border-b-0"
+                >
                   <span className="w-8 text-muted-foreground">{position + 1}</span>
                   <span className="flex-1 truncate">{entry.typeName}</span>
                   {entryAnswer.flagged && <Flag className="size-3.5 text-amber-600" aria-hidden />}
@@ -547,7 +534,11 @@ function Runner({ session }: { session: RunnerSession }) {
       </AlertDialog>
 
       {submitting && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm" role="status" aria-live="polite">
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
           <div className="rounded-xl border bg-card p-6 text-center shadow-lg">
             <Loader2 className="mx-auto mb-3 size-6 animate-spin text-primary" aria-hidden />
             <p className="font-medium">{submissionMessage}</p>

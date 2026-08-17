@@ -1,0 +1,11 @@
+# Copy to .dev.vars for local workerd development. Never commit .dev.vars.
+APP_ENV=local
+APP_URL=http://localhost:5173
+SUPPORT_EMAIL=support@example.com
+SESSION_SECRET=replace-with-at-least-32-random-characters
+ADMIN_SETUP_SECRET=replace-with-a-one-time-random-bootstrap-secret
+STRIPE_SECRET_KEY=sk_test_replace_me
+STRIPE_WEBHOOK_SECRET=whsec_replace_me
+STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
+# Optional transactional email provider key
+EMAIL_API_KEY=

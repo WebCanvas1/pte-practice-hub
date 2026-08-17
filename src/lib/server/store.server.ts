@@ -503,5 +503,6 @@ function createMemoryStore(): Store {
 }
 
 export function getStore(env: WorkerEnv): Store {
-  return env.DB ? createD1Store(env.DB) : createMemoryStore();
+  if (!env.DB) throw new Error("D1 binding DB is required.");
+  return createD1Store(env.DB);
 }

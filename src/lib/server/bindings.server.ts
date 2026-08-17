@@ -26,7 +26,11 @@ export interface KVNamespace {
 
 export interface R2Bucket {
   get: (key: string) => Promise<unknown>;
-  put: (key: string, value: unknown) => Promise<unknown>;
+  put: (
+    key: string,
+    value: unknown,
+    options?: { httpMetadata?: { contentType?: string } },
+  ) => Promise<unknown>;
   delete: (key: string) => Promise<void>;
 }
 
@@ -46,6 +50,7 @@ export interface AiBinding {
 }
 
 export interface WorkerEnv {
+  APP_ENV: string | undefined;
   DB: D1Database | undefined;
   SETTINGS_KV: KVNamespace | undefined;
   SESSIONS_KV: KVNamespace | undefined;
@@ -89,6 +94,7 @@ export async function getWorkerEnv(): Promise<WorkerEnv> {
     (bindings[key] as string | undefined) ?? process.env[key] ?? undefined;
 
   const resolved: WorkerEnv = {
+    APP_ENV: fromProcess("APP_ENV"),
     DB: bindings["DB"] as D1Database | undefined,
     SETTINGS_KV: bindings["SETTINGS_KV"] as KVNamespace | undefined,
     SESSIONS_KV: bindings["SESSIONS_KV"] as KVNamespace | undefined,

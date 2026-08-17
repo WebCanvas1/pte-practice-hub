@@ -254,7 +254,8 @@ export function seedTemplates(): TestTemplateRecord[] {
 function matchesTemplateFilters(template: TestTemplateRecord, filters: TemplateFilters): boolean {
   if (filters.testType && filters.testType !== "all" && template.testType !== filters.testType)
     return false;
-  if (filters.module && filters.module !== "all" && template.module !== filters.module) return false;
+  if (filters.module && filters.module !== "all" && template.module !== filters.module)
+    return false;
   if (
     filters.difficulty &&
     filters.difficulty !== "all" &&
@@ -269,10 +270,7 @@ function matchesTemplateFilters(template: TestTemplateRecord, filters: TemplateF
 /* --------------------------- generation + validation ------------------------ */
 
 /** Difficulties a rule may draw from. `mixed` templates spread across all. */
-function ruleDifficulties(
-  template: TestTemplateRecord,
-  rule: TestTemplateRule,
-): DifficultyKey[] {
+function ruleDifficulties(template: TestTemplateRecord, rule: TestTemplateRule): DifficultyKey[] {
   if (rule.difficulty) return [rule.difficulty];
   if (template.difficulty === "mixed") return [...difficultyKeys];
   return [template.difficulty as DifficultyKey];
@@ -299,7 +297,7 @@ function availabilityFor(
     return {
       typeKey: rule.typeKey,
       typeName: def?.name ?? rule.typeKey,
-      module: def?.module ?? (template.module ?? "speaking"),
+      module: def?.module ?? template.module ?? "speaking",
       difficulty: difficulties.length === 1 ? difficulties[0]! : "intermediate",
       required: rule.questionCount,
       available,
@@ -340,7 +338,9 @@ export async function validateTemplate(
   if (template.testType === "module" && template.module && modulesInRules.size > 0) {
     for (const key of modulesInRules) {
       if (key !== template.module)
-        warnings.push(`Rule for ${key} task type does not belong to the ${template.module} module.`);
+        warnings.push(
+          `Rule for ${key} task type does not belong to the ${template.module} module.`,
+        );
     }
   }
 
@@ -411,7 +411,7 @@ export async function generateTest(
       shortfalls.push({
         typeKey: rule.typeKey,
         typeName: label,
-        module: def?.module ?? (template.module ?? "speaking"),
+        module: def?.module ?? template.module ?? "speaking",
         difficulty: difficulties.length === 1 ? difficulties[0]! : "intermediate",
         required: rule.questionCount,
         available: picked.length,
@@ -544,7 +544,12 @@ function createMemoryTestStore(): TestStore {
 
     async setTemplateActive(id, isActive) {
       const existing = requireTemplate(id);
-      const record = { ...existing, isActive, purchasable: isActive && existing.purchasable, updatedAt: now() };
+      const record = {
+        ...existing,
+        isActive,
+        purchasable: isActive && existing.purchasable,
+        updatedAt: now(),
+      };
       db.templates.set(id, record);
       return record;
     },
@@ -564,7 +569,8 @@ function createMemoryTestStore(): TestStore {
     async findActiveEntitlement(userId, templateId) {
       return (
         [...db.entitlements.values()].find(
-          (row) => row.userId === userId && row.templateId === templateId && row.status === "active",
+          (row) =>
+            row.userId === userId && row.templateId === templateId && row.status === "active",
         ) ?? null
       );
     },
@@ -751,7 +757,10 @@ interface AttemptQuestionRow {
 }
 
 function createD1TestStore(DB: D1Database): TestStore {
-  const run = (sql: string, ...values: unknown[]) => DB.prepare(sql).bind(...values).run();
+  const run = (sql: string, ...values: unknown[]) =>
+    DB.prepare(sql)
+      .bind(...values)
+      .run();
   const first = <T>(sql: string, ...values: unknown[]) =>
     DB.prepare(sql)
       .bind(...values)
@@ -1306,7 +1315,8 @@ function createD1TestStore(DB: D1Database): TestStore {
 }
 
 export function getTestStore(env: WorkerEnv): TestStore {
-  return env.DB ? createD1TestStore(env.DB) : createMemoryTestStore();
+  if (!env.DB) throw new Error("D1 binding DB is required.");
+  return createD1TestStore(env.DB);
 }
 
 export function getStores(env: WorkerEnv): { tests: TestStore; questions: QuestionStore } {

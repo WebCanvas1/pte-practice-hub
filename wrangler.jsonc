@@ -1,0 +1,126 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pte-practice-hub",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-08-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true, "head_sampling_rate": 1, "logs": { "invocation_logs": true } },
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/admin/*", "/student/*", "/login", "/register", "/test/*"],
+  },
+  "vars": {
+    "APP_ENV": "local",
+    "APP_URL": "http://localhost:5173",
+    "SUPPORT_EMAIL": "support@example.com",
+    "AI_WRITING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
+    "AI_SPEAKING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
+    "AI_TRANSCRIPTION_MODEL": "@cf/openai/whisper-large-v3-turbo",
+  },
+  "ai": { "binding": "AI" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pte_portal_local",
+      "database_id": "local",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "kv_namespaces": [
+    { "binding": "SETTINGS_KV", "id": "local" },
+    { "binding": "SESSIONS_KV", "id": "local" },
+  ],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "pte-portal-media-local" }],
+  "env": {
+    "preview": {
+      "name": "pte-practice-hub-preview",
+      "vars": {
+        "APP_ENV": "preview",
+        "APP_URL": "https://pte-practice-hub-preview.webstarter17.workers.dev",
+        "SUPPORT_EMAIL": "support@example.com",
+        "AI_WRITING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "AI_SPEAKING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "AI_TRANSCRIPTION_MODEL": "@cf/openai/whisper-large-v3-turbo",
+      },
+      "ai": { "binding": "AI" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "pte_portal_preview",
+          "database_id": "9850bc45-09b2-41db-96bd-b26c7e867234",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "kv_namespaces": [
+        { "binding": "SETTINGS_KV", "id": "b0be0f63850f4ce4994d846d7a44c6a9" },
+        { "binding": "SESSIONS_KV", "id": "2b0893b63cd246ad8bcaad95c2f6b1e1" },
+      ],
+      "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "pte-portal-media-preview" }],
+      "queues": {
+        "producers": [
+          { "binding": "CONTENT_IMPORT_QUEUE", "queue": "pte-content-imports-preview" },
+        ],
+        "consumers": [
+          {
+            "queue": "pte-content-imports-preview",
+            "dead_letter_queue": "pte-content-imports-preview-dlq",
+            "max_retries": 3,
+            "max_batch_size": 5,
+          },
+        ],
+      },
+      "workflows": [
+        {
+          "name": "pte-content-import-workflow-preview",
+          "binding": "CONTENT_IMPORT_WORKFLOW",
+          "class_name": "ContentImportWorkflow",
+        },
+      ],
+    },
+    "production": {
+      "name": "pte-practice-hub",
+      "vars": {
+        "APP_ENV": "production",
+        "APP_URL": "https://pte-practice-hub.webstarter17.workers.dev",
+        "SUPPORT_EMAIL": "support@example.com",
+        "AI_WRITING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "AI_SPEAKING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "AI_TRANSCRIPTION_MODEL": "@cf/openai/whisper-large-v3-turbo",
+      },
+      "ai": { "binding": "AI" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "pte_portal",
+          "database_id": "00523f5d-56d8-4aaf-8472-657c605bcb21",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "kv_namespaces": [
+        { "binding": "SETTINGS_KV", "id": "117de9c53b7b42388ae4f598f901bdbe" },
+        { "binding": "SESSIONS_KV", "id": "24b60fa9e882467baf37d8654c74455e" },
+      ],
+      "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "pte-portal-media" }],
+      "queues": {
+        "producers": [{ "binding": "CONTENT_IMPORT_QUEUE", "queue": "pte-content-imports" }],
+        "consumers": [
+          {
+            "queue": "pte-content-imports",
+            "dead_letter_queue": "pte-content-imports-dlq",
+            "max_retries": 5,
+            "max_batch_size": 5,
+          },
+        ],
+      },
+      "workflows": [
+        {
+          "name": "pte-content-import-workflow",
+          "binding": "CONTENT_IMPORT_WORKFLOW",
+          "class_name": "ContentImportWorkflow",
+        },
+      ],
+    },
+  },
+}

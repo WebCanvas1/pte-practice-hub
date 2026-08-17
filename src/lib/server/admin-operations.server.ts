@@ -381,7 +381,7 @@ export async function handleAdminRequest(request: Request, action: string): Prom
           d1,
           r2: { status: ctx.env.MEDIA ? "configured" : "unavailable" },
           kv: { status: ctx.env.SETTINGS_KV && ctx.env.SESSIONS_KV ? "configured" : "partial" },
-          queue: { status: ctx.env.CONTENT_IMPORT_QUEUE ? "configured" : "fallback" },
+          queue: { status: ctx.env.CONTENT_IMPORT_QUEUE ? "configured" : "unavailable" },
           ai: {
             status: ctx.env.AI ? "configured" : "unavailable",
             provider: "Cloudflare Workers AI",
