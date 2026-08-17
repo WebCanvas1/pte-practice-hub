@@ -38,7 +38,7 @@
       "name": "pte-practice-hub-preview",
       "vars": {
         "APP_ENV": "preview",
-        "APP_URL": "https://pte-practice-hub-preview.workers.dev",
+        "APP_URL": "https://pte-practice-hub-preview.webstarter17.workers.dev",
         "SUPPORT_EMAIL": "support@example.com",
         "AI_WRITING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
         "AI_SPEAKING_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
